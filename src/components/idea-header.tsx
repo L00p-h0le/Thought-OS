@@ -53,29 +53,29 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
   });
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-6">
+    <div className="glass-card rounded-2xl p-6 shadow-md">
       {/* Status + Category row */}
       <div className="flex items-center gap-3 mb-4">
         <select
           value={status}
           onChange={(e) => changeStatus(e.target.value)}
-          className={`px-2.5 py-1 rounded-md text-xs font-medium font-mono border-none outline-none cursor-pointer ${STATUS_CSS[status as IdeaStatus] || "status-draft"}`}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono tracking-wide border outline-none cursor-pointer ${STATUS_CSS[status as IdeaStatus] || "status-draft"}`}
         >
           {IDEA_STATUSES.map((s) => (
-            <option key={s} value={s}>
+            <option key={s} value={s} className="bg-[#121622] text-white">
               {STATUS_LABELS[s]}
             </option>
           ))}
         </select>
 
         {idea.category && (
-          <span className="flex items-center gap-1 text-xs text-muted">
-            <Tag weight="regular" className="w-3 h-3" />
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium text-slate-300 bg-white/6 border border-white/10">
+            <Tag weight="bold" className="w-3.5 h-3.5 text-emerald-400" />
             {idea.category}
           </span>
         )}
 
-        <span className="text-xs text-muted/50 ml-auto font-mono">
+        <span className="text-[11px] text-slate-400 ml-auto font-mono tracking-wider font-medium">
           {createdDate}
         </span>
       </div>
@@ -90,24 +90,24 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
             onBlur={saveTitle}
             onKeyDown={(e) => e.key === "Enter" && saveTitle()}
             autoFocus
-            className="flex-1 bg-transparent text-xl font-semibold tracking-tight outline-none border-b border-accent/40 pb-1"
+            className="flex-1 bg-transparent text-2xl font-bold tracking-tight text-white outline-none border-b-2 border-emerald-400 pb-1"
           />
           <button
             onClick={saveTitle}
-            className="p-1.5 rounded-md hover:bg-surface-hover transition-default"
+            className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-emerald-950 transition-default"
           >
-            <Check weight="bold" className="w-4 h-4 text-accent" />
+            <Check weight="bold" className="w-5 h-5" />
           </button>
         </div>
       ) : (
         <h1
           onClick={() => setIsEditingTitle(true)}
-          className="text-xl font-semibold tracking-tight mb-3 cursor-pointer group flex items-center gap-2"
+          className="text-2xl font-bold tracking-tight text-white mb-3 cursor-pointer group flex items-center gap-2.5 hover:text-emerald-300 transition-default"
         >
           {title}
           <PencilSimple
-            weight="regular"
-            className="w-3.5 h-3.5 text-muted/30 opacity-0 group-hover:opacity-100 transition-default"
+            weight="bold"
+            className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-default"
           />
         </h1>
       )}
@@ -118,7 +118,7 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
         onChange={(e) => setDescription(e.target.value)}
         onBlur={saveDescription}
         placeholder="Add a description..."
-        className="w-full bg-transparent text-sm text-muted placeholder:text-muted/30 outline-none resize-none leading-relaxed"
+        className="w-full bg-transparent text-sm text-slate-300 focus:text-white placeholder:text-slate-500 outline-none resize-none leading-relaxed tracking-tight transition-default"
         rows={2}
       />
     </div>

@@ -39,9 +39,9 @@ const STATUS_ICONS: Record<string, typeof Circle> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  TODO: "text-muted",
-  IN_PROGRESS: "text-yellow-400",
-  DONE: "text-accent",
+  TODO: "text-slate-400 hover:text-slate-200",
+  IN_PROGRESS: "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]",
+  DONE: "text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]",
 };
 
 function nextStatus(current: string): string {
@@ -77,34 +77,36 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-6">
+    <div className="glass-card rounded-2xl p-6 shadow-md">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold tracking-tight">Tracker</h2>
-        <span className="text-xs font-mono text-muted">
+        <h2 className="text-base font-bold tracking-tight text-white">
+          Tracker
+        </h2>
+        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 rounded-md tabular-nums">
           {doneTasks}/{tasks.length}
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-2 bg-surface-active rounded-full overflow-hidden mb-5">
+      <div className="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden border border-white/5 mb-5">
         <div
-          className="h-full bg-accent rounded-full transition-all duration-700 ease-out"
+          className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(16,185,129,0.5)]"
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-surface-hover/50 rounded-lg p-1">
+      <div className="flex gap-1 mb-4 bg-[#121622] border border-white/10 rounded-xl p-1">
         {["ALL", ...TASK_STATUSES].map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => setFilter(s)}
-            className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-mono transition-default ${
+            className={`flex-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wide transition-default ${
               filter === s
-                ? "bg-surface-active text-foreground"
-                : "text-muted hover:text-foreground"
+                ? "bg-white/12 text-white shadow-xs"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             {s === "ALL" ? "All" : TASK_STATUS_LABELS[s as TaskStatus]}
@@ -123,54 +125,54 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
           name="title"
           required
           placeholder="Add a task..."
-          className="flex-1 bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default"
+          className="flex-1 bg-[#151a26]/90 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-slate-200 placeholder:text-slate-500 outline-none focus:border-emerald-500/50 transition-default tracking-tight"
         />
         <button
           type="submit"
-          className="p-2 rounded-lg bg-surface-hover hover:bg-surface-active transition-default active:scale-[0.95]"
+          className="p-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold transition-default active:scale-[0.95] shadow-sm cursor-pointer"
         >
-          <Plus weight="bold" className="w-4 h-4 text-muted" />
+          <Plus weight="bold" className="w-4 h-4" />
         </button>
       </form>
 
       {/* Task list */}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {filteredTasks.length === 0 && (
-          <p className="text-xs text-muted/40 text-center py-6">
+          <p className="text-xs text-slate-400 text-center py-6 font-medium">
             {filter === "ALL" ? "No tasks yet" : `No ${TASK_STATUS_LABELS[filter as TaskStatus]?.toLowerCase()} tasks`}
           </p>
         )}
 
         {filteredTasks.map((task) => {
           const StatusIcon = STATUS_ICONS[task.status] || Circle;
-          const statusColor = STATUS_COLORS[task.status] || "text-muted";
+          const statusColor = STATUS_COLORS[task.status] || "text-slate-400";
           const isExpanded = expandedTask === task.id;
 
           return (
             <div
               key={task.id}
-              className="group rounded-lg hover:bg-surface-hover/50 transition-default"
+              className="group rounded-xl hover:bg-white/6 transition-default border border-transparent hover:border-white/5"
             >
-              <div className="flex items-center gap-2.5 px-2 py-2">
+              <div className="flex items-center gap-3 px-3 py-2.5">
                 {/* Status toggle */}
                 <button
                   type="button"
                   onClick={() => cycleStatus(task)}
-                  className={`shrink-0 transition-default hover:scale-110 ${statusColor}`}
+                  className={`shrink-0 transition-default hover:scale-115 ${statusColor}`}
                   title={`Status: ${task.status}. Click to cycle.`}
                 >
                   <StatusIcon
-                    weight={task.status === "DONE" ? "fill" : "regular"}
-                    className="w-4.5 h-4.5"
+                    weight={task.status === "DONE" ? "fill" : "bold"}
+                    className="w-5 h-5"
                   />
                 </button>
 
                 {/* Title */}
                 <span
-                  className={`flex-1 text-sm truncate ${
+                  className={`flex-1 text-sm font-medium tracking-tight truncate ${
                     task.status === "DONE"
-                      ? "line-through text-muted/50"
-                      : "text-foreground"
+                      ? "line-through text-slate-400"
+                      : "text-slate-200"
                   }`}
                 >
                   {task.title}
@@ -178,7 +180,13 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
 
                 {/* Priority indicator */}
                 <span
-                  className={`text-[9px] font-mono uppercase priority-${task.priority.toLowerCase()} opacity-60`}
+                  className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border tracking-wider font-bold ${
+                    task.priority === "HIGH"
+                      ? "text-rose-400 bg-rose-950/40 border-rose-500/35 shadow-[0_0_8px_rgba(244,63,94,0.25)]"
+                      : task.priority === "MEDIUM"
+                        ? "text-amber-400 bg-amber-950/40 border-amber-500/35 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                        : "text-slate-400 bg-slate-900/40 border-slate-700/40"
+                  }`}
                 >
                   {task.priority[0]}
                 </span>
@@ -189,11 +197,11 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
                   onClick={() =>
                     setExpandedTask(isExpanded ? null : task.id)
                   }
-                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-surface-active transition-default"
+                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 transition-default"
                 >
                   <CaretDown
                     weight="bold"
-                    className={`w-3 h-3 text-muted transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
                   />
                 </button>
 
@@ -201,9 +209,9 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
                 <button
                   type="button"
                   onClick={() => handleDelete(task.id)}
-                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-danger-muted transition-default"
+                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-default"
                 >
-                  <Trash weight="regular" className="w-3 h-3 text-danger" />
+                  <Trash weight="bold" className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -212,7 +220,7 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
                 <div className="px-9 pb-3 space-y-2 animate-in">
                   {/* Priority selector */}
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-muted uppercase w-14">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold w-14">
                       Priority
                     </span>
                     <div className="flex gap-1">
@@ -223,10 +231,10 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
                           onClick={() =>
                             updateTask(task.id, ideaId, { priority: p })
                           }
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono transition-default ${
+                          className={`px-2.5 py-1 rounded text-[10px] font-mono font-semibold transition-default ${
                             task.priority === p
-                              ? `priority-${p.toLowerCase()} bg-surface-active`
-                              : "text-muted/50 hover:text-muted"
+                              ? `priority-${p.toLowerCase()} bg-white/15 border border-white/20`
+                              : "text-slate-400 hover:text-white"
                           }`}
                         >
                           {PRIORITY_LABELS[p]}
@@ -237,7 +245,7 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
 
                   {/* Status selector */}
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-muted uppercase w-14">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold w-14">
                       Status
                     </span>
                     <div className="flex gap-1">
@@ -248,10 +256,10 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
                           onClick={() =>
                             updateTask(task.id, ideaId, { status: s })
                           }
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono transition-default ${
+                          className={`px-2.5 py-1 rounded text-[10px] font-mono font-semibold transition-default ${
                             task.status === s
-                              ? "text-foreground bg-surface-active"
-                              : "text-muted/50 hover:text-muted"
+                              ? "text-white bg-white/15 border border-white/20"
+                              : "text-slate-400 hover:text-white"
                           }`}
                         >
                           {TASK_STATUS_LABELS[s]}

@@ -41,25 +41,25 @@ export default async function DashboardPage() {
       label: "Total Ideas",
       value: ideas.length,
       icon: Lightning,
-      color: "text-accent",
+      iconBox: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
     },
     {
       label: "Building",
       value: statusCounts["BUILDING"] || 0,
       icon: Target,
-      color: "text-yellow-400",
+      iconBox: "bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
     },
     {
       label: "Launched",
       value: statusCounts["LAUNCHED"] || 0,
       icon: TrendUp,
-      color: "text-emerald-400",
+      iconBox: "bg-teal-500/15 border-teal-500/30 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.25)]",
     },
     {
       label: "Tasks Done",
       value: totalTasks > 0 ? `${doneTasks}/${totalTasks}` : "0",
       icon: CheckCircle,
-      color: "text-blue-400",
+      iconBox: "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
     },
   ];
 
@@ -68,14 +68,16 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 animate-in">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted mt-1">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.06)]">
+            Dashboard
+          </h1>
+          <p className="text-sm text-slate-400 mt-1 font-medium">
             {ideas.length} idea{ideas.length !== 1 ? "s" : ""} captured
           </p>
         </div>
         <Link
           href="/ideas/new"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-background text-sm font-medium hover:bg-accent-hover transition-default active:scale-[0.98]"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer"
         >
           <Plus weight="bold" className="w-4 h-4" />
           New Idea
@@ -87,15 +89,19 @@ export default async function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-surface border border-border rounded-xl p-5 hover:border-surface-active transition-default"
+            className="glass-card glass-card-hover rounded-2xl p-5 transition-default group"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-lg bg-surface-hover flex items-center justify-center">
-                <stat.icon weight="fill" className={`w-4.5 h-4.5 ${stat.color}`} />
+              <div
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-default group-hover:scale-105 ${stat.iconBox}`}
+              >
+                <stat.icon weight="fill" className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-            <p className="text-xs text-muted mt-0.5 font-mono uppercase tracking-wider">
+            <p className="text-3xl font-extrabold tracking-tight text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+              {stat.value}
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-[0.14em] font-semibold">
               {stat.label}
             </p>
           </div>
@@ -103,23 +109,25 @@ export default async function DashboardPage() {
       </div>
 
       {/* Quick Add */}
-      <div className="mb-8 animate-in" style={{ animationDelay: "200ms" }}>
+      <div className="mb-8 animate-in" style={{ animationDelay: "120ms" }}>
         <QuickAddForm />
       </div>
 
       {/* Ideas Grid */}
       {ideas.length === 0 ? (
-        <div className="text-center py-20 animate-in">
-          <div className="w-16 h-16 rounded-2xl bg-surface border border-border flex items-center justify-center mx-auto mb-4">
-            <Lightning weight="thin" className="w-8 h-8 text-muted" />
+        <div className="text-center py-20 px-6 glass-card rounded-3xl border border-white/12 relative overflow-hidden animate-in">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/35 shadow-[0_0_32px_rgba(16,185,129,0.25)] flex items-center justify-center mx-auto mb-4 text-emerald-400">
+            <Lightning weight="fill" className="w-8 h-8" />
           </div>
-          <h2 className="text-lg font-medium mb-2">No ideas yet</h2>
-          <p className="text-sm text-muted mb-6">
+          <h2 className="text-xl font-bold tracking-tight text-white mb-2">
+            No ideas yet
+          </h2>
+          <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
             Start capturing your ideas. Every great product started as a thought.
           </p>
           <Link
             href="/ideas/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-background text-sm font-medium hover:bg-accent-hover transition-default"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98]"
           >
             <Plus weight="bold" className="w-4 h-4" />
             Add Your First Idea
@@ -137,22 +145,22 @@ export default async function DashboardPage() {
               <Link
                 key={idea.id}
                 href={`/ideas/${idea.id}`}
-                className="flex items-center gap-4 bg-surface border border-border rounded-xl p-4 hover:border-surface-active hover:bg-surface-hover/50 transition-default group"
+                className="flex items-center gap-4 glass-card glass-card-hover rounded-xl p-4 transition-default group"
               >
                 {/* Status badge */}
                 <span
-                  className={`shrink-0 px-2.5 py-1 rounded-md text-xs font-medium font-mono ${STATUS_CSS[idea.status as IdeaStatus] || "status-draft"}`}
+                  className={`shrink-0 px-3 py-1 rounded-md text-xs font-semibold font-mono tracking-wide ${STATUS_CSS[idea.status as IdeaStatus] || "status-draft"}`}
                 >
                   {STATUS_LABELS[idea.status as IdeaStatus] || idea.status}
                 </span>
 
                 {/* Title + desc */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium truncate group-hover:text-foreground">
+                  <h3 className="text-sm font-semibold tracking-tight text-slate-200 group-hover:text-white transition-default truncate">
                     {idea.title}
                   </h3>
                   {idea.description && (
-                    <p className="text-xs text-muted truncate mt-0.5">
+                    <p className="text-xs text-slate-400 truncate mt-0.5">
                       {idea.description}
                     </p>
                   )}
@@ -162,26 +170,28 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   {idea.analysis && (
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase ${LEVEL_CSS[idea.analysis.feasibility as Level] || ""}`}
+                      className={`px-2.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-semibold ${LEVEL_CSS[idea.analysis.feasibility as Level] || ""}`}
                     >
                       {idea.analysis.feasibility}
                     </span>
                   )}
 
                   {idea.analysis?.canMonetize && (
-                    <span className="text-[10px] font-mono text-accent">$</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+                      $
+                    </span>
                   )}
 
                   {/* Task progress */}
                   {totalIdTasks > 0 && (
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-surface-active rounded-full overflow-hidden">
+                      <div className="w-16 h-2 bg-slate-800/80 rounded-full overflow-hidden border border-white/5">
                         <div
-                          className="h-full bg-accent rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-mono text-muted">
+                      <span className="text-[11px] font-mono tabular-nums text-slate-400 font-semibold">
                         {tasksDone}/{totalIdTasks}
                       </span>
                     </div>

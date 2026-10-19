@@ -46,16 +46,16 @@ function LevelSelector({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex gap-1.5">
+    <div className="flex gap-2">
       {LEVELS.map((level) => (
         <button
           key={level}
           type="button"
           onClick={() => onChange(level)}
-          className={`px-3 py-1 rounded-md text-xs font-medium font-mono transition-default ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono tracking-wider transition-default ${
             value === level
-              ? LEVEL_CSS[level]
-              : "bg-surface-hover text-muted hover:text-foreground"
+              ? `${LEVEL_CSS[level]} shadow-sm`
+              : "bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
           }`}
         >
           {LEVEL_LABELS[level]}
@@ -75,10 +75,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-border last:border-b-0 pb-5 mb-5 last:pb-0 last:mb-0">
-      <div className="flex items-center gap-2 mb-3">
-        <IconComponent weight="regular" className="w-4 h-4 text-muted" />
-        <h3 className="text-xs font-mono uppercase tracking-wider text-muted">
+    <div className="border-b border-white/8 last:border-b-0 pb-6 mb-6 last:pb-0 last:mb-0">
+      <div className="flex items-center gap-2.5 mb-3.5">
+        <IconComponent weight="bold" className="w-4 h-4 text-emerald-400" />
+        <h3 className="text-xs font-mono uppercase tracking-[0.14em] font-bold text-slate-300">
           {title}
         </h3>
       </div>
@@ -108,8 +108,10 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-6">
-      <h2 className="text-sm font-semibold mb-6 tracking-tight">Analysis</h2>
+    <div className="glass-card rounded-2xl p-6 shadow-md">
+      <h2 className="text-base font-bold tracking-tight text-white mb-6">
+        Analysis & Feasibility
+      </h2>
 
       {/* Challenges */}
       <Section icon={Warning} title="Challenges">
@@ -118,7 +120,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, challenges: e.target.value })}
           onBlur={() => save({ challenges: data.challenges })}
           placeholder="What are the obstacles, risks, or technical challenges?"
-          className="w-full bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={3}
         />
       </Section>
@@ -130,7 +132,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, knowledgeGap: e.target.value })}
           onBlur={() => save({ knowledgeGap: data.knowledgeGap })}
           placeholder="What do you need to learn or research to build this?"
-          className="w-full bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={3}
         />
       </Section>
@@ -148,7 +150,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           }
           onBlur={() => save({ feasibilityNotes: data.feasibilityNotes })}
           placeholder="Why this feasibility rating?"
-          className="w-full mt-3 bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full mt-3 bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={2}
         />
       </Section>
@@ -166,7 +168,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           }
           onBlur={() => save({ scalabilityNotes: data.scalabilityNotes })}
           placeholder="How well can this scale? What's the ceiling?"
-          className="w-full mt-3 bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full mt-3 bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={2}
         />
       </Section>
@@ -179,17 +181,17 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
             role="switch"
             aria-checked={data.canMonetize}
             onClick={() => save({ canMonetize: !data.canMonetize })}
-            className={`relative w-10 h-5.5 rounded-full transition-default ${
-              data.canMonetize ? "bg-accent" : "bg-surface-active"
+            className={`relative w-11 h-6 rounded-full transition-default ${
+              data.canMonetize ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : "bg-slate-800"
             }`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white transition-default ${
-                data.canMonetize ? "translate-x-[18px]" : ""
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-default ${
+                data.canMonetize ? "translate-x-[20px]" : ""
               }`}
             />
           </button>
-          <span className="text-sm text-foreground">
+          <span className="text-sm font-semibold text-white tracking-tight">
             {data.canMonetize ? "Yes, monetizable" : "Not monetizable"}
           </span>
         </label>
@@ -202,8 +204,8 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
             onBlur={() =>
               save({ monetizationStrategy: data.monetizationStrategy })
             }
-            placeholder="How would you monetize? Subscription, one-time, freemium, ads..."
-            className="w-full bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+            placeholder="How would you monetize? Subscription, one-time, freemium, usage-based..."
+            className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
             rows={3}
           />
         )}
@@ -216,7 +218,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, howToBuild: e.target.value })}
           onBlur={() => save({ howToBuild: data.howToBuild })}
           placeholder="Tech stack, architecture, MVP approach, phases..."
-          className="w-full bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={4}
         />
       </Section>
@@ -228,7 +230,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, freeformNotes: e.target.value })}
           onBlur={() => save({ freeformNotes: data.freeformNotes })}
           placeholder="Any additional thoughts, links, references..."
-          className="w-full bg-surface-hover/50 border border-border-subtle rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted/30 outline-none focus:border-accent/30 transition-default resize-y"
+          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
           rows={4}
         />
       </Section>

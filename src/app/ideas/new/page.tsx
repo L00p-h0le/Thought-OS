@@ -22,18 +22,22 @@ export default function NewIdeaPage() {
       <div className="mb-8 animate-in">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-default mb-4"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-emerald-400 transition-default mb-4 group"
         >
-          <ArrowLeft weight="regular" className="w-4 h-4" />
-          Back
+          <ArrowLeft weight="bold" className="w-4 h-4 group-hover:-translate-x-1 transition-default" />
+          Back to Dashboard
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
-            <Lightning weight="fill" className="w-5 h-5 text-accent" />
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400">
+            <Lightning weight="fill" className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">New Idea</h1>
-            <p className="text-sm text-muted">Capture it before it fades</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white">
+              New Idea
+            </h1>
+            <p className="text-sm text-slate-400 font-medium">
+              Capture it before it fades
+            </p>
           </div>
         </div>
       </div>
@@ -42,14 +46,14 @@ export default function NewIdeaPage() {
       <form
         ref={formRef}
         action={handleSubmit}
-        className="space-y-6 animate-in"
-        style={{ animationDelay: "100ms" }}
+        className="space-y-6 glass-card rounded-2xl p-8 border border-white/10 shadow-lg animate-in"
+        style={{ animationDelay: "80ms" }}
       >
         {/* Title */}
         <div>
           <label
             htmlFor="idea-title"
-            className="block text-xs font-mono uppercase tracking-wider text-muted mb-2"
+            className="block text-xs font-mono uppercase tracking-[0.12em] font-bold text-slate-300 mb-2"
           >
             Title
           </label>
@@ -59,7 +63,7 @@ export default function NewIdeaPage() {
             name="title"
             required
             placeholder="What's the idea?"
-            className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus-ring transition-default focus:border-accent/40"
+            className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] tracking-tight outline-none transition-default"
           />
         </div>
 
@@ -67,7 +71,7 @@ export default function NewIdeaPage() {
         <div>
           <label
             htmlFor="idea-desc"
-            className="block text-xs font-mono uppercase tracking-wider text-muted mb-2"
+            className="block text-xs font-mono uppercase tracking-[0.12em] font-bold text-slate-300 mb-2"
           >
             Description
           </label>
@@ -76,7 +80,7 @@ export default function NewIdeaPage() {
             name="description"
             rows={4}
             placeholder="Describe the idea in a few sentences..."
-            className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus-ring transition-default focus:border-accent/40 resize-y"
+            className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] tracking-tight outline-none transition-default resize-y"
           />
         </div>
 
@@ -84,10 +88,10 @@ export default function NewIdeaPage() {
         <div>
           <label
             htmlFor="idea-category"
-            className="block text-xs font-mono uppercase tracking-wider text-muted mb-2"
+            className="block text-xs font-mono uppercase tracking-[0.12em] font-bold text-slate-300 mb-2"
           >
             Category
-            <span className="text-muted/40 ml-1 normal-case tracking-normal">
+            <span className="text-slate-500 ml-1.5 normal-case font-normal">
               (optional)
             </span>
           </label>
@@ -96,7 +100,7 @@ export default function NewIdeaPage() {
             type="text"
             name="category"
             placeholder="e.g. SaaS, Mobile App, Side Project"
-            className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus-ring transition-default focus:border-accent/40"
+            className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] tracking-tight outline-none transition-default"
           />
         </div>
 
@@ -104,7 +108,7 @@ export default function NewIdeaPage() {
         <div>
           <label
             htmlFor="idea-status"
-            className="block text-xs font-mono uppercase tracking-wider text-muted mb-2"
+            className="block text-xs font-mono uppercase tracking-[0.12em] font-bold text-slate-300 mb-2"
           >
             Status
           </label>
@@ -112,10 +116,10 @@ export default function NewIdeaPage() {
             id="idea-status"
             name="status"
             defaultValue="DRAFT"
-            className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-sm text-foreground focus-ring transition-default focus:border-accent/40 appearance-none cursor-pointer"
+            className="w-full bg-[#151a26] border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold font-mono text-white focus:border-emerald-500/50 outline-none cursor-pointer tracking-wide"
           >
             {IDEA_STATUSES.map((s) => (
-              <option key={s} value={s}>
+              <option key={s} value={s} className="bg-[#121622] text-white">
                 {STATUS_LABELS[s]}
               </option>
             ))}
@@ -126,13 +130,13 @@ export default function NewIdeaPage() {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            className="flex-1 py-3 rounded-lg bg-accent text-background text-sm font-medium hover:bg-accent-hover transition-default active:scale-[0.98]"
+            className="flex-1 py-3.5 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer"
           >
             Create Idea
           </button>
           <Link
             href="/"
-            className="px-6 py-3 rounded-lg bg-surface border border-border text-sm text-muted hover:text-foreground hover:bg-surface-hover transition-default"
+            className="px-6 py-3.5 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-sm font-semibold tracking-tight text-slate-300 hover:text-white transition-default"
           >
             Cancel
           </Link>

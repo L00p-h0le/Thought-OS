@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { ArrowLeft, Trash } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { IdeaHeader } from "@/components/idea-header";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { TaskTracker } from "@/components/task-tracker";
@@ -30,9 +30,9 @@ export default async function IdeaDetailPage({ params }: Props) {
       <div className="flex items-center justify-between mb-6 animate-in">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-default"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-emerald-400 transition-default group"
         >
-          <ArrowLeft weight="regular" className="w-4 h-4" />
+          <ArrowLeft weight="bold" className="w-4 h-4 group-hover:-translate-x-1 transition-default" />
           Dashboard
         </Link>
         <DeleteIdeaButton ideaId={idea.id} />

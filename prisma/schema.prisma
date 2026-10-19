@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  status      String   @default("DRAFT") // DRAFT, EXPLORING, BUILDING, LAUNCHED, ARCHIVED
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  analysis IdeaAnalysis?
+  tasks    Task[]
+}
+
+model IdeaAnalysis {
+  id                    String  @id @default(cuid())
+  ideaId                String  @unique
+  challenges            String  @default("")
+  knowledgeGap          String  @default("")
+  feasibility           String  @default("MEDIUM") // LOW, MEDIUM, HIGH
+  feasibilityNotes      String  @default("")
+  scalability           String  @default("MEDIUM") // LOW, MEDIUM, HIGH
+  scalabilityNotes      String  @default("")
+  canMonetize           Boolean @default(false)
+  monetizationStrategy  String  @default("")
+  howToBuild            String  @default("")
+  freeformNotes         String  @default("")
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  ideaId      String
+  title       String
+  description String   @default("")
+  status      String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+}

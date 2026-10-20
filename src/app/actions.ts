@@ -147,10 +147,25 @@ export async function createTask(formData: FormData) {
   const ideaId = formData.get("ideaId") as string;
   const title = (formData.get("title") as string)?.trim();
   const priority = (formData.get("priority") as string) || "MEDIUM";
+  const dueDateRaw = (formData.get("dueDate") as string)?.trim();
 
   if (!title) throw new Error("Task title is required");
   if (title.length > MAX_TITLE_LENGTH) throw new Error(`Task title must be ${MAX_TITLE_LENGTH} characters or less`);
   if (!VALID_PRIORITIES.has(priority as typeof PRIORITIES[number])) throw new Error("Invalid priority");
+
+  const ideaExists = await prisma.idea.findUnique({
+    where: { id: ideaId },
+    select: { id: true },
+  });
+  if (!ideaExists) throw new Error("Idea not found");
+
+  let dueDate: Date | null = null;
+  if (dueDateRaw) {
+    const parsed = new Date(dueDateRaw);
+    if (!isNaN(parsed.getTime())) {
+      dueDate = parsed;
+    }
+  }
 
   const maxOrder = await prisma.task.aggregate({
     where: { ideaId },
@@ -162,6 +177,7 @@ export async function createTask(formData: FormData) {
       ideaId,
       title,
       priority,
+      dueDate,
       sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
     },
   });
@@ -172,33 +188,75 @@ export async function createTask(formData: FormData) {
 export async function updateTask(
   id: string,
   ideaId: string,
-  data: { title?: string; status?: string; priority?: string; description?: string }
+  data: {
+    title?: string;
+    status?: string;
+    priority?: string;
+    description?: string;
+    dueDate?: string | null | Date;
+  }
 ) {
+  const updateData: Record<string, unknown> = {};
+
   if (data.title !== undefined) {
-    data.title = data.title.trim();
-    if (!data.title) throw new Error("Task title is required");
-    if (data.title.length > MAX_TITLE_LENGTH) throw new Error(`Task title must be ${MAX_TITLE_LENGTH} characters or less`);
-  }
-  if (data.status !== undefined && !VALID_TASK_STATUSES.has(data.status as typeof TASK_STATUSES[number])) {
-    throw new Error("Invalid task status");
-  }
-  if (data.priority !== undefined && !VALID_PRIORITIES.has(data.priority as typeof PRIORITIES[number])) {
-    throw new Error("Invalid priority");
+    const trimmedTitle = data.title.trim();
+    if (!trimmedTitle) throw new Error("Task title is required");
+    if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+      throw new Error(`Task title must be ${MAX_TITLE_LENGTH} characters or less`);
+    }
+    updateData.title = trimmedTitle;
   }
 
-  // Auto-set completedAt when marking Done, clear when reopening
-  const updateData: Record<string, unknown> = { ...data };
-  if (data.status === "DONE") {
-    updateData.completedAt = new Date();
-  } else if (data.status && data.status !== "DONE") {
-    updateData.completedAt = null;
+  if (data.description !== undefined) {
+    updateData.description = clampText(data.description, 5000);
   }
 
-  await prisma.task.update({ where: { id }, data: updateData });
+  if (data.status !== undefined) {
+    if (!VALID_TASK_STATUSES.has(data.status as typeof TASK_STATUSES[number])) {
+      throw new Error("Invalid task status");
+    }
+    updateData.status = data.status;
+    if (data.status === "DONE") {
+      updateData.completedAt = new Date();
+    } else {
+      updateData.completedAt = null;
+    }
+  }
+
+  if (data.priority !== undefined) {
+    if (!VALID_PRIORITIES.has(data.priority as typeof PRIORITIES[number])) {
+      throw new Error("Invalid priority");
+    }
+    updateData.priority = data.priority;
+  }
+
+  if (data.dueDate !== undefined) {
+    if (data.dueDate === null || data.dueDate === "") {
+      updateData.dueDate = null;
+    } else {
+      const parsed = new Date(data.dueDate);
+      if (isNaN(parsed.getTime())) throw new Error("Invalid due date");
+      updateData.dueDate = parsed;
+    }
+  }
+
+  const result = await prisma.task.updateMany({
+    where: { id, ideaId },
+    data: updateData,
+  });
+
+  if (result.count === 0) throw new Error("Task not found for this idea");
+
   revalidatePath(`/ideas/${ideaId}`);
 }
 
 export async function deleteTask(id: string, ideaId: string) {
-  await prisma.task.delete({ where: { id } });
+  const result = await prisma.task.deleteMany({
+    where: { id, ideaId },
+  });
+
+  if (result.count === 0) throw new Error("Task not found for this idea");
+
   revalidatePath(`/ideas/${ideaId}`);
 }
+

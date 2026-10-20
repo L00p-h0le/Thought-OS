@@ -1,7 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { STATUS_LABELS, STATUS_CSS, LEVEL_CSS } from "@/lib/constants";
-import type { IdeaStatus, Level } from "@/lib/constants";
+import type { IdeaStatus } from "@/lib/constants";
 import {
   Plus,
   Lightning,
@@ -10,8 +10,25 @@ import {
   CheckCircle,
 } from "@phosphor-icons/react/dist/ssr";
 import { QuickAddForm } from "@/components/quick-add-form";
+import { IdeaList, type SerializedIdea } from "@/components/idea-list";
 
-export default async function DashboardPage() {
+interface PageProps {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const initialQuery =
+    typeof resolvedParams.q === "string" ? resolvedParams.q : "";
+  const initialStatus =
+    typeof resolvedParams.status === "string" ? resolvedParams.status : "ACTIVE";
+  const initialCategory =
+    typeof resolvedParams.category === "string"
+      ? resolvedParams.category
+      : "ALL";
+  const initialSort =
+    typeof resolvedParams.sort === "string" ? resolvedParams.sort : "updated";
+
   const ideas = await prisma.idea.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
@@ -41,29 +58,55 @@ export default async function DashboardPage() {
     {
       label: "Total Ideas",
       value: activeIdeas.length,
+      href: "/?status=ACTIVE",
       icon: Lightning,
-      iconBox: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
+      iconBox:
+        "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
     },
     {
       label: "Building",
       value: statusCounts["BUILDING"] || 0,
+      href: "/?status=BUILDING",
       icon: Target,
-      iconBox: "bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
+      iconBox:
+        "bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
     },
     {
       label: "Launched",
       value: statusCounts["LAUNCHED"] || 0,
+      href: "/?status=LAUNCHED",
       icon: TrendUp,
-      iconBox: "bg-teal-500/15 border-teal-500/30 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.25)]",
+      iconBox:
+        "bg-teal-500/15 border-teal-500/30 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.25)]",
     },
     {
       label: "Tasks Done",
       value: totalTasks > 0 ? `${doneTasks}/${totalTasks}` : "0",
+      href: "/?status=ACTIVE&sort=tasks",
       icon: CheckCircle,
-      iconBox: "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
+      iconBox:
+        "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
     },
   ];
 
+  const serializedIdeas: SerializedIdea[] = ideas.map((idea) => ({
+    id: idea.id,
+    title: idea.title,
+    description: idea.description,
+    category: idea.category,
+    status: idea.status,
+    createdAt: idea.createdAt.toISOString(),
+    updatedAt: idea.updatedAt.toISOString(),
+    archivedAt: idea.archivedAt?.toISOString() ?? null,
+    analysis: idea.analysis
+      ? {
+          feasibility: idea.analysis.feasibility,
+          scalability: idea.analysis.scalability,
+          canMonetize: idea.analysis.canMonetize,
+        }
+      : null,
+    tasks: idea.tasks.map((t) => ({ status: t.status })),
+  }));
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -74,7 +117,8 @@ export default async function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-sm text-slate-400 mt-1 font-medium">
-            {ideas.length} idea{ideas.length !== 1 ? "s" : ""} captured
+            {activeIdeas.length} active idea{activeIdeas.length !== 1 ? "s" : ""}
+            {statusCounts["ARCHIVED"] ? ` (${statusCounts["ARCHIVED"]} archived)` : ""}
           </p>
         </div>
         <Link
@@ -86,19 +130,24 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards (Linked to filters per spec §3.6) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
         {stats.map((stat) => (
-          <div
+          <Link
             key={stat.label}
-            className="glass-card glass-card-hover rounded-2xl p-5 transition-default group"
+            href={stat.href}
+            className="glass-card glass-card-hover rounded-2xl p-5 transition-default group cursor-pointer block"
+            title={`Filter by ${stat.label}`}
           >
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
               <div
                 className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-default group-hover:scale-105 ${stat.iconBox}`}
               >
                 <stat.icon weight="fill" className="w-5 h-5" />
               </div>
+              <span className="text-[10px] text-slate-400 font-mono opacity-0 group-hover:opacity-100 transition-default">
+                view &rarr;
+              </span>
             </div>
             <p className="text-3xl font-extrabold tracking-tight text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
               {stat.value}
@@ -106,7 +155,7 @@ export default async function DashboardPage() {
             <p className="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-[0.14em] font-semibold">
               {stat.label}
             </p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -115,95 +164,22 @@ export default async function DashboardPage() {
         <QuickAddForm />
       </div>
 
-      {/* Ideas Grid */}
-      {ideas.length === 0 ? (
-        <div className="text-center py-20 px-6 glass-card rounded-3xl border border-white/12 relative overflow-hidden animate-in">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/35 shadow-[0_0_32px_rgba(16,185,129,0.25)] flex items-center justify-center mx-auto mb-4 text-emerald-400">
-            <Lightning weight="fill" className="w-8 h-8" />
+      {/* Ideas List with Search, Filter & Sort */}
+      <Suspense
+        fallback={
+          <div className="text-center py-12 text-slate-400 text-sm font-mono">
+            Loading ideas...
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white mb-2">
-            No ideas yet
-          </h2>
-          <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
-            Start capturing your ideas. Every great product started as a thought.
-          </p>
-          <Link
-            href="/ideas/new"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98]"
-          >
-            <Plus weight="bold" className="w-4 h-4" />
-            Add Your First Idea
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-2 stagger">
-          {ideas.map((idea) => {
-            const tasksDone = idea.tasks.filter((t) => t.status === "DONE").length;
-            const totalIdTasks = idea.tasks.length;
-            const progress =
-              totalIdTasks > 0 ? (tasksDone / totalIdTasks) * 100 : 0;
-
-            return (
-              <Link
-                key={idea.id}
-                href={`/ideas/${idea.id}`}
-                className="flex items-center gap-4 glass-card glass-card-hover rounded-xl p-4 transition-default group"
-              >
-                {/* Status badge */}
-                <span
-                  className={`shrink-0 px-3 py-1 rounded-md text-xs font-semibold font-mono tracking-wide ${STATUS_CSS[idea.status as IdeaStatus] || "status-draft"}`}
-                >
-                  {STATUS_LABELS[idea.status as IdeaStatus] || idea.status}
-                </span>
-
-                {/* Title + desc */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold tracking-tight text-slate-200 group-hover:text-white transition-default truncate">
-                    {idea.title}
-                  </h3>
-                  {idea.description && (
-                    <p className="text-xs text-slate-400 truncate mt-0.5">
-                      {idea.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Indicators */}
-                <div className="flex items-center gap-3 shrink-0">
-                  {idea.analysis && (
-                    <span
-                      className={`px-2.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-semibold ${LEVEL_CSS[idea.analysis.feasibility as Level] || ""}`}
-                    >
-                      {idea.analysis.feasibility}
-                    </span>
-                  )}
-
-                  {idea.analysis?.canMonetize && (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-                      $
-                    </span>
-                  )}
-
-                  {/* Task progress */}
-                  {totalIdTasks > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-800/80 rounded-full overflow-hidden border border-white/5">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-mono tabular-nums text-slate-400 font-semibold">
-                        {tasksDone}/{totalIdTasks}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+        }
+      >
+        <IdeaList
+          ideas={serializedIdeas}
+          initialQuery={initialQuery}
+          initialStatus={initialStatus}
+          initialCategory={initialCategory}
+          initialSort={initialSort}
+        />
+      </Suspense>
     </div>
   );
 }

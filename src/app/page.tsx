@@ -8,6 +8,7 @@ import {
   Target,
   TrendUp,
   CheckCircle,
+  Rocket,
 } from "@phosphor-icons/react/dist/ssr";
 import { QuickAddForm } from "@/components/quick-add-form";
 import { IdeaList, type SerializedIdea } from "@/components/idea-list";
@@ -54,6 +55,19 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     0
   );
 
+  // Implementation Rate: Launched / (Exploring + Building + Launched) * 100 per spec §3.6
+  const eligibleIdeas = ideas.filter(
+    (i) =>
+      i.status === "EXPLORING" ||
+      i.status === "BUILDING" ||
+      i.status === "LAUNCHED"
+  );
+  const launchedCount = statusCounts["LAUNCHED"] || 0;
+  const implementationRate =
+    eligibleIdeas.length > 0
+      ? `${Math.round((launchedCount / eligibleIdeas.length) * 100)}%`
+      : "N/A";
+
   const stats = [
     {
       label: "Total Ideas",
@@ -73,11 +87,19 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     },
     {
       label: "Launched",
-      value: statusCounts["LAUNCHED"] || 0,
+      value: launchedCount,
       href: "/?status=LAUNCHED",
       icon: TrendUp,
       iconBox:
         "bg-teal-500/15 border-teal-500/30 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.25)]",
+    },
+    {
+      label: "Ship Rate",
+      value: implementationRate,
+      href: "/?status=LAUNCHED",
+      icon: Rocket,
+      iconBox:
+        "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-400 shadow-[0_0_20px_rgba(217,70,239,0.25)]",
     },
     {
       label: "Tasks Done",
@@ -88,6 +110,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
     },
   ];
+
 
   const serializedIdeas: SerializedIdea[] = ideas.map((idea) => ({
     id: idea.id,
@@ -131,7 +154,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
 
       {/* Stats Cards (Linked to filters per spec §3.6) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8 stagger">
         {stats.map((stat) => (
           <Link
             key={stat.label}

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { updateIdea, archiveIdea, restoreIdea, launchIdea } from "@/app/actions";
+import { useToast } from "@/components/toast-provider";
 import {
   IDEA_STATUSES,
   STATUS_LABELS,
@@ -32,6 +34,8 @@ type IdeaHeaderProps = {
 };
 
 export function IdeaHeader({ idea }: IdeaHeaderProps) {
+  const { success, info, error } = useToast();
+  const [mounted, setMounted] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [title, setTitle] = useState(idea.title);
@@ -41,6 +45,10 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
   const [showLaunchConfirm, setShowLaunchConfirm] = useState(false);
   const [titleError, setTitleError] = useState("");
   const categoryRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function saveTitle() {
     const trimmed = title.trim();
@@ -54,14 +62,24 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
     }
     setTitleError("");
     if (trimmed !== idea.title) {
-      await updateIdea(idea.id, { title: trimmed });
+      try {
+        await updateIdea(idea.id, { title: trimmed });
+        success("Title updated");
+      } catch (err: unknown) {
+        error("Failed to update title", err instanceof Error ? err.message : undefined);
+      }
     }
     setIsEditingTitle(false);
   }
 
   async function saveDescription() {
     if (description !== idea.description) {
-      await updateIdea(idea.id, { description });
+      try {
+        await updateIdea(idea.id, { description });
+        success("Description updated");
+      } catch (err: unknown) {
+        error("Failed to update description", err instanceof Error ? err.message : undefined);
+      }
     }
   }
 
@@ -69,7 +87,12 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
     const trimmed = category.trim();
     const newCat = trimmed || null;
     if (newCat !== idea.category) {
-      await updateIdea(idea.id, { category: newCat });
+      try {
+        await updateIdea(idea.id, { category: newCat });
+        success("Category updated");
+      } catch (err: unknown) {
+        error("Failed to update category", err instanceof Error ? err.message : undefined);
+      }
     }
     setIsEditingCategory(false);
   }
@@ -83,23 +106,44 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
     // ARCHIVED goes through archiveIdea action
     if (newStatus === "ARCHIVED") {
       setStatus(newStatus);
-      await archiveIdea(idea.id);
+      try {
+        await archiveIdea(idea.id);
+        info("Idea archived", "You can find this idea under the Archived filter.");
+      } catch (err: unknown) {
+        error("Failed to archive idea", err instanceof Error ? err.message : undefined);
+      }
       return;
     }
     setStatus(newStatus);
-    await updateIdea(idea.id, { status: newStatus });
+    try {
+      await updateIdea(idea.id, { status: newStatus });
+      success(`Status changed to ${STATUS_LABELS[newStatus as IdeaStatus] || newStatus}`);
+    } catch (err: unknown) {
+      error("Failed to update status", err instanceof Error ? err.message : undefined);
+    }
   }
 
   async function confirmLaunch() {
     setStatus("LAUNCHED");
     setShowLaunchConfirm(false);
-    await launchIdea(idea.id);
+    try {
+      await launchIdea(idea.id);
+      success("Idea Launched! 🚀", `Congratulations on shipping "${idea.title}".`);
+    } catch (err: unknown) {
+      error("Failed to launch idea", err instanceof Error ? err.message : undefined);
+    }
   }
 
   async function handleRestore() {
     setStatus("EXPLORING");
-    await restoreIdea(idea.id);
+    try {
+      await restoreIdea(idea.id);
+      success("Idea restored", "Idea moved back to active status (Exploring).");
+    } catch (err: unknown) {
+      error("Failed to restore idea", err instanceof Error ? err.message : undefined);
+    }
   }
+
 
   const isArchived = status === "ARCHIVED";
 
@@ -234,45 +278,55 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
       </div>
 
       {/* Launch confirmation modal */}
-      {showLaunchConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in">
-          <div className="glass-card rounded-2xl p-8 max-w-md w-full mx-4 border border-white/15 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400">
-                <Rocket weight="fill" className="w-6 h-6" />
+      {mounted &&
+        showLaunchConfirm &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={() => setShowLaunchConfirm(false)}
+          >
+            <div
+              className="glass-card rounded-2xl p-8 max-w-md w-full border border-white/15 shadow-2xl relative animate-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400">
+                  <Rocket weight="fill" className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold tracking-tight text-white">
+                    Launch this idea?
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">
+                    This marks the idea as completed and shipped.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold tracking-tight text-white">
-                  Launch this idea?
-                </h3>
-                <p className="text-xs text-slate-400 font-medium">
-                  This marks the idea as completed and shipped.
-                </p>
+              <p className="text-sm text-slate-300 mb-6 leading-relaxed">
+                You&apos;re about to mark <span className="font-semibold text-white">&quot;{idea.title}&quot;</span> as Launched. This is an explicit action confirming the idea has been completed or released.
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={confirmLaunch}
+                  className="flex-1 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Rocket weight="bold" className="w-4 h-4" />
+                  Confirm Launch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLaunchConfirm(false)}
+                  className="px-5 py-3 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-sm font-semibold text-slate-300 hover:text-white transition-default cursor-pointer"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-            <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-              You&apos;re about to mark <span className="font-semibold text-white">&quot;{idea.title}&quot;</span> as Launched. This is an explicit action confirming the idea has been completed or released.
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={confirmLaunch}
-                className="flex-1 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Rocket weight="bold" className="w-4 h-4" />
-                Confirm Launch
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowLaunchConfirm(false)}
-                className="px-5 py-3 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-sm font-semibold text-slate-300 hover:text-white transition-default cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
+
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateAnalysis } from "@/app/actions";
+import { useToast } from "@/components/toast-provider";
 import {
   LEVELS,
   LEVEL_LABELS,
@@ -88,6 +89,8 @@ function Section({
 }
 
 export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
+  const { error } = useToast();
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [data, setData] = useState({
     challenges: analysis?.challenges || "",
     knowledgeGap: analysis?.knowledgeGap || "",
@@ -104,14 +107,45 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
   async function save(partial: Partial<typeof data>) {
     const updated = { ...data, ...partial };
     setData(updated);
-    await updateAnalysis(ideaId, partial);
+    setSaveState("saving");
+    try {
+      await updateAnalysis(ideaId, partial);
+      setSaveState("saved");
+      setTimeout(() => {
+        setSaveState((curr) => (curr === "saved" ? "idle" : curr));
+      }, 2500);
+    } catch (err: unknown) {
+      setSaveState("error");
+      const msg = err instanceof Error ? err.message : "Failed to save analysis";
+      error("Save failed", msg);
+    }
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6 shadow-md">
-      <h2 className="text-base font-bold tracking-tight text-white mb-6">
-        Analysis & Feasibility
-      </h2>
+    <div className="glass-card rounded-2xl p-6 shadow-md border border-white/10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-base font-bold tracking-tight text-white">
+          Analysis & Feasibility
+        </h2>
+        <div className="text-xs font-mono">
+          {saveState === "saving" && (
+            <span className="text-amber-400 flex items-center gap-1.5 animate-pulse font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              Saving...
+            </span>
+          )}
+          {saveState === "saved" && (
+            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+              ✓ Saved
+            </span>
+          )}
+          {saveState === "error" && (
+            <span className="text-rose-400 font-semibold">
+              Save failed
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Challenges */}
       <Section icon={Warning} title="Challenges">

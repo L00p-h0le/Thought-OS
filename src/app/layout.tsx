@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
+import { ToastProvider } from "@/components/toast-provider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -34,9 +35,12 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex font-sans">
-        <Sidebar />
-        <main className="flex-1 min-h-screen overflow-y-auto">{children}</main>
+        <ToastProvider>
+          <Sidebar />
+          <main className="flex-1 min-h-screen overflow-y-auto">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   );
 }
+

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useMemo } from "react";
 import { createTask, updateTask, deleteTask } from "@/app/actions";
+import { useToast } from "@/components/toast-provider";
 import {
   TASK_STATUSES,
   TASK_STATUS_LABELS,
@@ -136,6 +137,7 @@ function toDateInputValue(val: Date | string | null | undefined): string {
 }
 
 export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
+  const { success, info, error } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [filter, setFilter] = useState<string>("ALL");
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
@@ -174,20 +176,30 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
     try {
       await createTask(formData);
       formRef.current?.reset();
+      success("Task added", `"${title}" has been created.`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to create task";
       setFormError(msg);
+      error("Task creation failed", msg);
     }
   }
 
   async function cycleStatus(task: Task) {
     const newStatus = nextStatus(task.status);
-    await updateTask(task.id, ideaId, { status: newStatus });
+    try {
+      await updateTask(task.id, ideaId, { status: newStatus });
+    } catch (err: unknown) {
+      error("Failed to update status", err instanceof Error ? err.message : undefined);
+    }
   }
 
   async function cyclePriority(task: Task) {
     const newPriority = nextPriority(task.priority);
-    await updateTask(task.id, ideaId, { priority: newPriority });
+    try {
+      await updateTask(task.id, ideaId, { priority: newPriority });
+    } catch (err: unknown) {
+      error("Failed to update priority", err instanceof Error ? err.message : undefined);
+    }
   }
 
   function startEditing(task: Task) {
@@ -198,15 +210,26 @@ export function TaskTracker({ ideaId, tasks }: TaskTrackerProps) {
   async function saveEditTitle(taskId: string) {
     const trimmed = editTitle.trim();
     if (trimmed && trimmed !== tasks.find((t) => t.id === taskId)?.title) {
-      await updateTask(taskId, ideaId, { title: trimmed });
+      try {
+        await updateTask(taskId, ideaId, { title: trimmed });
+        success("Task title updated");
+      } catch (err: unknown) {
+        error("Failed to update task", err instanceof Error ? err.message : undefined);
+      }
     }
     setEditingTaskId(null);
   }
 
   async function handleDelete(taskId: string) {
     setConfirmDeleteId(null);
-    await deleteTask(taskId, ideaId);
+    try {
+      await deleteTask(taskId, ideaId);
+      info("Task deleted");
+    } catch (err: unknown) {
+      error("Failed to delete task", err instanceof Error ? err.message : undefined);
+    }
   }
+
 
   return (
     <div className="glass-card rounded-2xl p-6 shadow-md border border-white/10">

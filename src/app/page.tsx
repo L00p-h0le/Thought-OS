@@ -30,8 +30,9 @@ export default async function DashboardPage() {
     {} as Record<string, number>
   );
 
-  const totalTasks = ideas.reduce((sum, i) => sum + i.tasks.length, 0);
-  const doneTasks = ideas.reduce(
+  const activeIdeas = ideas.filter((i) => i.status !== "ARCHIVED");
+  const totalTasks = activeIdeas.reduce((sum, i) => sum + i.tasks.length, 0);
+  const doneTasks = activeIdeas.reduce(
     (sum, i) => sum + i.tasks.filter((t) => t.status === "DONE").length,
     0
   );
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
   const stats = [
     {
       label: "Total Ideas",
-      value: ideas.length,
+      value: activeIdeas.length,
       icon: Lightning,
       iconBox: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
     },
@@ -62,6 +63,7 @@ export default async function DashboardPage() {
       iconBox: "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
     },
   ];
+
 
   return (
     <div className="p-8 max-w-6xl mx-auto">

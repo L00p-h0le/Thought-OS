@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Idea {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  description String   @default("")
-  status      String   @default("DRAFT") // DRAFT, EXPLORING, BUILDING, LAUNCHED, ARCHIVED
+  description String    @default("")
+  status      String    @default("DRAFT") // DRAFT, EXPLORING, BUILDING, LAUNCHED, ARCHIVED
   category    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   analysis IdeaAnalysis?
   tasks    Task[]
@@ -38,15 +39,17 @@ model IdeaAnalysis {
 }
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   ideaId      String
   title       String
-  description String   @default("")
-  status      String   @default("TODO") // TODO, IN_PROGRESS, DONE
-  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String    @default("")
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+  sortOrder   Int       @default(0)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
 }

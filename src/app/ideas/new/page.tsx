@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createIdea } from "@/app/actions";
 import { IDEA_STATUSES, STATUS_LABELS } from "@/lib/constants";
@@ -10,10 +10,29 @@ import Link from "next/link";
 export default function NewIdeaPage() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(formData: FormData) {
-    const idea = await createIdea(formData);
-    router.push(`/ideas/${idea.id}`);
+    setError("");
+    const title = (formData.get("title") as string)?.trim();
+    if (!title) {
+      setError("Title is required");
+      return;
+    }
+    if (title.length > 200) {
+      setError("Title must be 200 characters or less");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const idea = await createIdea(formData);
+      router.push(`/ideas/${idea.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create idea");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -42,6 +61,13 @@ export default function NewIdeaPage() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-sm text-rose-400 font-medium animate-in">
+          {error}
+        </div>
+      )}
+
       {/* Form */}
       <form
         ref={formRef}
@@ -55,13 +81,14 @@ export default function NewIdeaPage() {
             htmlFor="idea-title"
             className="block text-xs font-mono uppercase tracking-[0.12em] font-bold text-slate-300 mb-2"
           >
-            Title
+            Title <span className="text-rose-400">*</span>
           </label>
           <input
             id="idea-title"
             type="text"
             name="title"
             required
+            maxLength={200}
             placeholder="What's the idea?"
             className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] tracking-tight outline-none transition-default"
           />
@@ -79,6 +106,7 @@ export default function NewIdeaPage() {
             id="idea-desc"
             name="description"
             rows={4}
+            maxLength={5000}
             placeholder="Describe the idea in a few sentences..."
             className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] tracking-tight outline-none transition-default resize-y"
           />
@@ -130,9 +158,10 @@ export default function NewIdeaPage() {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            className="flex-1 py-3.5 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer"
+            disabled={submitting}
+            className="flex-1 py-3.5 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Idea
+            {submitting ? "Creating..." : "Create Idea"}
           </button>
           <Link
             href="/"

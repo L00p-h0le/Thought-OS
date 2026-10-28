@@ -6,7 +6,6 @@ import { useToast } from "@/components/toast-provider";
 import {
   LEVELS,
   LEVEL_LABELS,
-  LEVEL_CSS,
   type Level,
 } from "@/lib/constants";
 import {
@@ -17,6 +16,7 @@ import {
   CurrencyDollar,
   Wrench,
   NotePencil,
+  Check,
   type Icon,
 } from "@phosphor-icons/react";
 
@@ -39,26 +39,34 @@ type AnalysisPanelProps = {
   analysis: Analysis;
 };
 
+const LEVEL_DOT: Record<Level, string> = {
+  LOW: "bg-danger",
+  MEDIUM: "bg-warning",
+  HIGH: "bg-success",
+};
+
 function LevelSelector({
   value,
   onChange,
+  label,
 }: {
   value: string;
   onChange: (v: string) => void;
+  label: string;
 }) {
   return (
-    <div className="flex gap-2">
+    <div role="group" aria-label={label} className="segmented">
       {LEVELS.map((level) => (
         <button
           key={level}
           type="button"
+          aria-pressed={value === level}
           onClick={() => onChange(level)}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-mono tracking-wider transition-default ${
-            value === level
-              ? `${LEVEL_CSS[level]} shadow-sm`
-              : "bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
-          }`}
+          className="segmented-item min-w-20"
         >
+          {value === level && (
+            <span className={`w-2 h-2 rounded-full ${LEVEL_DOT[level]}`} aria-hidden />
+          )}
           {LEVEL_LABELS[level]}
         </button>
       ))}
@@ -76,15 +84,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-white/8 last:border-b-0 pb-6 mb-6 last:pb-0 last:mb-0">
-      <div className="flex items-center gap-2.5 mb-3.5">
-        <IconComponent weight="bold" className="w-4 h-4 text-emerald-400" />
-        <h3 className="text-xs font-mono uppercase tracking-[0.14em] font-bold text-slate-300">
-          {title}
-        </h3>
+    <section className="border-b border-line last:border-b-0 pb-6 mb-6 last:pb-0 last:mb-0">
+      <div className="flex items-center gap-2 mb-3 text-fg-muted">
+        <IconComponent weight="bold" className="w-4 h-4" aria-hidden />
+        <h3 className="eyebrow">{title}</h3>
       </div>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -122,25 +128,25 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6 shadow-md border border-white/10">
+    <div className="tile p-5 md:p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-base font-bold tracking-tight text-white">
-          Analysis & Feasibility
-        </h2>
-        <div className="text-xs font-mono">
+        <h2 className="text-lg font-bold">Analysis &amp; feasibility</h2>
+        <div className="text-xs font-mono" aria-live="polite">
           {saveState === "saving" && (
-            <span className="text-amber-400 flex items-center gap-1.5 animate-pulse font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span className="text-fg-muted flex items-center gap-1.5 animate-pulse font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden />
               Saving...
             </span>
           )}
           {saveState === "saved" && (
-            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-              ✓ Saved
+            <span className="text-success flex items-center gap-1 font-semibold">
+              <Check weight="bold" className="w-3.5 h-3.5" aria-hidden />
+              Saved
             </span>
           )}
           {saveState === "error" && (
-            <span className="text-rose-400 font-semibold">
+            <span className="text-danger flex items-center gap-1 font-semibold">
+              <Warning weight="bold" className="w-3.5 h-3.5" aria-hidden />
               Save failed
             </span>
           )}
@@ -154,7 +160,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, challenges: e.target.value })}
           onBlur={() => save({ challenges: data.challenges })}
           placeholder="What are the obstacles, risks, or technical challenges?"
-          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field resize-y"
           rows={3}
         />
       </Section>
@@ -166,7 +172,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, knowledgeGap: e.target.value })}
           onBlur={() => save({ knowledgeGap: data.knowledgeGap })}
           placeholder="What do you need to learn or research to build this?"
-          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field resize-y"
           rows={3}
         />
       </Section>
@@ -176,6 +182,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
         <LevelSelector
           value={data.feasibility}
           onChange={(v) => save({ feasibility: v })}
+          label="Feasibility"
         />
         <textarea
           value={data.feasibilityNotes}
@@ -184,7 +191,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           }
           onBlur={() => save({ feasibilityNotes: data.feasibilityNotes })}
           placeholder="Why this feasibility rating?"
-          className="w-full mt-3 bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field mt-3 resize-y"
           rows={2}
         />
       </Section>
@@ -194,6 +201,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
         <LevelSelector
           value={data.scalability}
           onChange={(v) => save({ scalability: v })}
+          label="Scalability"
         />
         <textarea
           value={data.scalabilityNotes}
@@ -202,7 +210,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           }
           onBlur={() => save({ scalabilityNotes: data.scalabilityNotes })}
           placeholder="How well can this scale? What's the ceiling?"
-          className="w-full mt-3 bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field mt-3 resize-y"
           rows={2}
         />
       </Section>
@@ -215,17 +223,17 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
             role="switch"
             aria-checked={data.canMonetize}
             onClick={() => save({ canMonetize: !data.canMonetize })}
-            className={`relative w-11 h-6 rounded-full transition-default ${
-              data.canMonetize ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : "bg-slate-800"
+            className={`relative w-11 h-6 rounded-full border transition-default ${
+              data.canMonetize ? "bg-accent border-accent" : "bg-surface-3 border-line-input"
             }`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-default ${
-                data.canMonetize ? "translate-x-[20px]" : ""
+              className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full shadow-sm transition-default ${
+                data.canMonetize ? "translate-x-5 bg-on-accent" : "bg-fg-muted"
               }`}
             />
           </button>
-          <span className="text-sm font-semibold text-white tracking-tight">
+          <span className="text-sm font-semibold text-fg">
             {data.canMonetize ? "Yes, monetizable" : "Not monetizable"}
           </span>
         </label>
@@ -239,7 +247,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
               save({ monetizationStrategy: data.monetizationStrategy })
             }
             placeholder="How would you monetize? Subscription, one-time, freemium, usage-based..."
-            className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+            className="field resize-y"
             rows={3}
           />
         )}
@@ -252,7 +260,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, howToBuild: e.target.value })}
           onBlur={() => save({ howToBuild: data.howToBuild })}
           placeholder="Tech stack, architecture, MVP approach, phases..."
-          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field resize-y"
           rows={4}
         />
       </Section>
@@ -264,7 +272,7 @@ export function AnalysisPanel({ ideaId, analysis }: AnalysisPanelProps) {
           onChange={(e) => setData({ ...data, freeformNotes: e.target.value })}
           onBlur={() => save({ freeformNotes: data.freeformNotes })}
           placeholder="Any additional thoughts, links, references..."
-          className="w-full bg-[#151a26]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50 focus:bg-[#1a2030] focus:shadow-[0_0_16px_rgba(16,185,129,0.2)] transition-default tracking-tight outline-none resize-y"
+          className="field resize-y"
           rows={4}
         />
       </Section>

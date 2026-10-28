@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { IdeaHeader } from "@/components/idea-header";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { TaskTracker } from "@/components/task-tracker";
 import { DeleteIdeaButton } from "@/components/delete-idea-button";
+import { PageHeader } from "@/components/page-header";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -25,38 +24,23 @@ export default async function IdeaDetailPage({ params }: Props) {
   if (!idea) notFound();
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      {/* Back nav */}
-      <div className="flex items-center justify-between mb-6 animate-in">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-emerald-400 transition-default group"
-        >
-          <ArrowLeft weight="bold" className="w-4 h-4 group-hover:-translate-x-1 transition-default" />
-          Dashboard
-        </Link>
-        <DeleteIdeaButton ideaId={idea.id} />
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
+      <PageHeader
+        breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: idea.title }]}
+      />
+
+      <div className="animate-in" style={{ animationDelay: "40ms" }}>
+        <IdeaHeader idea={idea} actions={<DeleteIdeaButton ideaId={idea.id} />} />
       </div>
 
-      {/* Header */}
-      <div className="animate-in" style={{ animationDelay: "50ms" }}>
-        <IdeaHeader idea={idea} />
-      </div>
-
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
-        {/* Analysis — 3/5 */}
-        <div
-          className="lg:col-span-3 animate-in"
-          style={{ animationDelay: "100ms" }}
-        >
+      {/* Asymmetric split: analysis (primary) + sticky tracker */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6 mt-6 items-start">
+        <div className="animate-in" style={{ animationDelay: "80ms" }}>
           <AnalysisPanel ideaId={idea.id} analysis={idea.analysis} />
         </div>
-
-        {/* Tracker — 2/5 */}
         <div
-          className="lg:col-span-2 animate-in"
-          style={{ animationDelay: "150ms" }}
+          className="animate-in lg:sticky lg:top-6"
+          style={{ animationDelay: "120ms" }}
         >
           <TaskTracker ideaId={idea.id} tasks={idea.tasks} />
         </div>

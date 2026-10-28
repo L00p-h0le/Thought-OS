@@ -1,21 +1,31 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import type { IdeaStatus } from "@/lib/constants";
+import { STATUS_LABELS, type IdeaStatus } from "@/lib/constants";
+import { STATUS_ICONS } from "@/lib/status-icons";
 import {
   Plus,
   Lightning,
-  Target,
-  TrendUp,
   CheckCircle,
   Rocket,
+  ArrowRight,
 } from "@phosphor-icons/react/dist/ssr";
 import { QuickAddForm } from "@/components/quick-add-form";
 import { IdeaList, type SerializedIdea } from "@/components/idea-list";
+import { PageHeader } from "@/components/page-header";
+import { IdeaListSkeleton } from "@/components/skeletons";
 
 interface PageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
+
+// Pipeline stages shown in the hero tile, with the semantic colour for each.
+const PIPELINE: { status: IdeaStatus; bar: string }[] = [
+  { status: "DRAFT", bar: "bg-neutral" },
+  { status: "EXPLORING", bar: "bg-info" },
+  { status: "BUILDING", bar: "bg-warning" },
+  { status: "LAUNCHED", bar: "bg-success" },
+];
 
 export default async function DashboardPage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? await searchParams : {};
@@ -54,6 +64,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     (sum, i) => sum + i.tasks.filter((t) => t.status === "DONE").length,
     0
   );
+  const taskProgress = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;
 
   // Implementation Rate: Launched / (Exploring + Building + Launched) * 100 per spec §3.6
   const eligibleIdeas = ideas.filter(
@@ -68,49 +79,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       ? `${Math.round((launchedCount / eligibleIdeas.length) * 100)}%`
       : "N/A";
 
-  const stats = [
-    {
-      label: "Total Ideas",
-      value: activeIdeas.length,
-      href: "/?status=ACTIVE",
-      icon: Lightning,
-      iconBox:
-        "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
-    },
-    {
-      label: "Building",
-      value: statusCounts["BUILDING"] || 0,
-      href: "/?status=BUILDING",
-      icon: Target,
-      iconBox:
-        "bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)]",
-    },
-    {
-      label: "Launched",
-      value: launchedCount,
-      href: "/?status=LAUNCHED",
-      icon: TrendUp,
-      iconBox:
-        "bg-teal-500/15 border-teal-500/30 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.25)]",
-    },
-    {
-      label: "Ship Rate",
-      value: implementationRate,
-      href: "/?status=LAUNCHED",
-      icon: Rocket,
-      iconBox:
-        "bg-fuchsia-500/15 border-fuchsia-500/30 text-fuchsia-400 shadow-[0_0_20px_rgba(217,70,239,0.25)]",
-    },
-    {
-      label: "Tasks Done",
-      value: totalTasks > 0 ? `${doneTasks}/${totalTasks}` : "0",
-      href: "/?status=ACTIVE&sort=tasks",
-      icon: CheckCircle,
-      iconBox:
-        "bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.25)]",
-    },
-  ];
-
+  const pipelineTotal = PIPELINE.reduce(
+    (sum, p) => sum + (statusCounts[p.status] || 0),
+    0
+  );
 
   const serializedIdeas: SerializedIdea[] = ideas.map((idea) => ({
     id: idea.id,
@@ -132,77 +104,150 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   }));
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 animate-in">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.06)]">
-            Dashboard
-          </h1>
-          <p className="text-sm text-slate-400 mt-1 font-medium">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
+      <PageHeader
+        title="Dashboard"
+        description={
+          <>
             {activeIdeas.length} active idea{activeIdeas.length !== 1 ? "s" : ""}
-            {statusCounts["ARCHIVED"] ? ` (${statusCounts["ARCHIVED"]} archived)` : ""}
-          </p>
-        </div>
-        <Link
-          href="/ideas/new"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer"
-        >
-          <Plus weight="bold" className="w-4 h-4" />
-          New Idea
-        </Link>
-      </div>
-
-      {/* Stats Cards (Linked to filters per spec §3.6) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8 stagger">
-        {stats.map((stat) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className="glass-card glass-card-hover rounded-2xl p-5 transition-default group cursor-pointer block"
-            title={`Filter by ${stat.label}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-default group-hover:scale-105 ${stat.iconBox}`}
-              >
-                <stat.icon weight="fill" className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono opacity-0 group-hover:opacity-100 transition-default">
-                view &rarr;
-              </span>
-            </div>
-            <p className="text-3xl font-extrabold tracking-tight text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
-              {stat.value}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-[0.14em] font-semibold">
-              {stat.label}
-            </p>
-          </Link>
-        ))}
-      </div>
-
-      {/* Quick Add */}
-      <div className="mb-8 animate-in" style={{ animationDelay: "120ms" }}>
-        <QuickAddForm />
-      </div>
-
-      {/* Ideas List with Search, Filter & Sort */}
-      <Suspense
-        fallback={
-          <div className="text-center py-12 text-slate-400 text-sm font-mono">
-            Loading ideas...
-          </div>
+            {statusCounts["ARCHIVED"] ? ` · ${statusCounts["ARCHIVED"]} archived` : ""}
+          </>
         }
+        actions={
+          <Link href="/ideas/new" className="btn btn-primary max-md:hidden">
+            <Plus weight="bold" className="w-4 h-4" aria-hidden />
+            New Idea
+          </Link>
+        }
+      />
+
+      {/* Bento overview — DOM order follows priority (largest tile first). */}
+      <section
+        aria-label="Overview"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 stagger"
       >
-        <IdeaList
-          ideas={serializedIdeas}
-          initialQuery={initialQuery}
-          initialStatus={initialStatus}
-          initialCategory={initialCategory}
-          initialSort={initialSort}
-        />
-      </Suspense>
+        {/* Hero: ship rate + pipeline */}
+        <article className="tile col-span-2 lg:row-span-2 p-6 flex flex-col">
+          <div className="flex items-center gap-2 text-fg-muted">
+            <Rocket weight="bold" className="w-4 h-4" aria-hidden />
+            <h2 className="eyebrow">Ship rate</h2>
+          </div>
+          <p className="mt-3 text-5xl font-bold tracking-tight tabular-nums text-fg">
+            {implementationRate}
+          </p>
+          <p className="text-sm text-fg-muted mt-1">
+            {launchedCount} launched of {eligibleIdeas.length} in progress or shipped
+          </p>
+
+          <div className="mt-auto pt-6">
+            <div
+              className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-3 gap-0.5"
+              aria-hidden
+            >
+              {pipelineTotal > 0 &&
+                PIPELINE.map(({ status, bar }) => {
+                  const count = statusCounts[status] || 0;
+                  if (!count) return null;
+                  return (
+                    <span
+                      key={status}
+                      className={bar}
+                      style={{ width: `${(count / pipelineTotal) * 100}%` }}
+                    />
+                  );
+                })}
+            </div>
+            <ul className="mt-4 grid grid-cols-2 gap-x-8 gap-y-1">
+              {PIPELINE.map(({ status, bar }) => {
+                const Icon = STATUS_ICONS[status];
+                return (
+                  <li key={status}>
+                    <Link
+                      href={`/?status=${status}`}
+                      className="flex items-center gap-2.5 rounded-lg px-2 -mx-2 min-h-10 text-sm text-fg-body hover:bg-surface-2 hover:text-fg transition-default"
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${bar}`} aria-hidden />
+                      <Icon weight="bold" className="w-3.5 h-3.5 text-fg-muted" aria-hidden />
+                      <span className="font-medium">{STATUS_LABELS[status]}</span>
+                      <span className="ml-auto font-mono tabular-nums text-fg">
+                        {statusCounts[status] || 0}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </article>
+
+        {/* Quick capture */}
+        <article className="tile col-span-2 p-6">
+          <div className="flex items-center gap-2 text-fg-muted mb-3">
+            <Lightning weight="bold" className="w-4 h-4" aria-hidden />
+            <h2 className="eyebrow">Quick capture</h2>
+          </div>
+          <QuickAddForm />
+          <p className="text-xs text-fg-muted mt-2.5">
+            Saved as a draft. Add details and analysis later.
+          </p>
+        </article>
+
+        {/* Active ideas */}
+        <Link
+          href="/?status=ACTIVE"
+          className="tile tile-interactive p-6 flex flex-col group"
+        >
+          <span className="flex items-center gap-2 text-fg-muted">
+            <Lightning weight="bold" className="w-4 h-4" aria-hidden />
+            <span className="eyebrow">Active ideas</span>
+          </span>
+          <span className="mt-3 text-3xl font-bold tabular-nums text-fg">
+            {activeIdeas.length}
+          </span>
+          <span className="mt-auto pt-3 inline-flex items-center gap-1 text-xs font-semibold text-fg-muted group-hover:text-accent transition-default">
+            View all <ArrowRight weight="bold" className="w-3 h-3" aria-hidden />
+          </span>
+        </Link>
+
+        {/* Tasks */}
+        <Link
+          href="/?status=ACTIVE&sort=tasks"
+          className="tile tile-interactive p-6 flex flex-col group"
+        >
+          <span className="flex items-center gap-2 text-fg-muted">
+            <CheckCircle weight="bold" className="w-4 h-4" aria-hidden />
+            <span className="eyebrow">Tasks done</span>
+          </span>
+          <span className="mt-3 text-3xl font-bold tabular-nums text-fg">
+            {doneTasks}
+            <span className="text-lg text-fg-muted font-semibold">/{totalTasks}</span>
+          </span>
+          <span className="mt-auto pt-3 block">
+            <span className="progress-track block">
+              <span
+                className="progress-fill block"
+                style={{ width: `${taskProgress}%` }}
+              />
+            </span>
+          </span>
+        </Link>
+      </section>
+
+      {/* Ideas */}
+      <section aria-labelledby="ideas-heading">
+        <h2 id="ideas-heading" className="text-xl font-bold mb-4">
+          Ideas
+        </h2>
+        <Suspense fallback={<IdeaListSkeleton />}>
+          <IdeaList
+            ideas={serializedIdeas}
+            initialQuery={initialQuery}
+            initialStatus={initialStatus}
+            initialCategory={initialCategory}
+            initialSort={initialSort}
+          />
+        </Suspense>
+      </section>
     </div>
   );
 }

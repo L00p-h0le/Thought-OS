@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState, useRef } from "react";
 import { updateIdea, archiveIdea, restoreIdea, launchIdea } from "@/app/actions";
 import { useToast } from "@/components/toast-provider";
+import { Modal } from "@/components/modal";
+import { StatusBadge } from "@/components/status-badge";
 import {
   IDEA_STATUSES,
   STATUS_LABELS,
@@ -15,9 +16,8 @@ import {
   Check,
   Tag,
   Rocket,
-  Archive,
   ArrowCounterClockwise,
-  X,
+  CalendarBlank,
 } from "@phosphor-icons/react";
 
 type IdeaHeaderProps = {
@@ -31,11 +31,11 @@ type IdeaHeaderProps = {
     createdAt: Date;
     updatedAt: Date;
   };
+  actions?: React.ReactNode;
 };
 
-export function IdeaHeader({ idea }: IdeaHeaderProps) {
+export function IdeaHeader({ idea, actions }: IdeaHeaderProps) {
   const { success, info, error } = useToast();
-  const [mounted, setMounted] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [title, setTitle] = useState(idea.title);
@@ -45,10 +45,6 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
   const [showLaunchConfirm, setShowLaunchConfirm] = useState(false);
   const [titleError, setTitleError] = useState("");
   const categoryRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   async function saveTitle() {
     const trimmed = title.trim();
@@ -155,42 +151,49 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
 
   return (
     <>
-      <div className="glass-card rounded-2xl p-6 shadow-md">
-        {/* Status + Category row */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
+      <section className="tile p-5 md:p-6" aria-label="Idea details">
+        {/* Status + Category + meta row */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           {isArchived ? (
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono tracking-wide border ${STATUS_CSS["ARCHIVED"]}`}>
-                Archived
-              </span>
+            <>
+              <StatusBadge status="ARCHIVED" />
               <button
                 type="button"
                 onClick={handleRestore}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 transition-default active:scale-[0.98] cursor-pointer"
+                className="btn btn-secondary btn-sm"
               >
-                <ArrowCounterClockwise weight="bold" className="w-3.5 h-3.5" />
+                <ArrowCounterClockwise weight="bold" className="w-3.5 h-3.5" aria-hidden />
                 Restore
               </button>
-            </div>
+            </>
           ) : (
-            <select
-              value={status}
-              onChange={(e) => changeStatus(e.target.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono tracking-wide border outline-none cursor-pointer ${STATUS_CSS[status as IdeaStatus] || "status-draft"}`}
-            >
-              {IDEA_STATUSES.map((s) => (
-                <option key={s} value={s} className="bg-[#121622] text-white">
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <>
+              <label htmlFor="idea-status" className="sr-only">
+                Status
+              </label>
+              <select
+                id="idea-status"
+                value={status}
+                onChange={(e) => changeStatus(e.target.value)}
+                className={`chip status-select ${STATUS_CSS[status as IdeaStatus] || "status-draft"}`}
+              >
+                {IDEA_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
 
           {/* Category */}
           {isEditingCategory ? (
-            <div className="flex items-center gap-1.5">
-              <Tag weight="bold" className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="flex items-center gap-1">
+              <label htmlFor="idea-category-edit" className="sr-only">
+                Category
+              </label>
               <input
+                id="idea-category-edit"
                 ref={categoryRef}
                 type="text"
                 value={category}
@@ -199,38 +202,50 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
                 onKeyDown={(e) => e.key === "Enter" && saveCategory()}
                 autoFocus
                 placeholder="Category"
-                className="bg-transparent text-xs font-mono font-medium text-white outline-none border-b border-emerald-400 pb-0.5 w-32"
+                className="field field-sm w-36 font-mono"
               />
               <button
                 type="button"
                 onClick={saveCategory}
-                className="p-0.5 rounded text-emerald-400 hover:bg-emerald-500/20 transition-default"
+                className="btn btn-ghost btn-icon"
+                aria-label="Save category"
               >
-                <Check weight="bold" className="w-3.5 h-3.5" />
+                <Check weight="bold" className="w-4 h-4" aria-hidden />
               </button>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => setIsEditingCategory(true)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium text-slate-300 bg-white/6 border border-white/10 hover:border-white/20 hover:text-white transition-default cursor-pointer group"
+              className="btn btn-ghost btn-sm font-mono group"
             >
-              <Tag weight="bold" className="w-3.5 h-3.5 text-emerald-400" />
+              <Tag weight="bold" className="w-3.5 h-3.5" aria-hidden />
               {idea.category || "Add category"}
-              <PencilSimple weight="bold" className="w-3 h-3 text-slate-500 opacity-0 group-hover:opacity-100 transition-default" />
+              <PencilSimple
+                weight="bold"
+                className="w-3 h-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-default"
+                aria-hidden
+              />
             </button>
           )}
 
-          <span className="text-[11px] text-slate-400 ml-auto font-mono tracking-wider font-medium">
+          <span className="flex items-center gap-1.5 text-xs text-fg-muted font-mono ml-auto">
+            <CalendarBlank weight="bold" className="w-3.5 h-3.5" aria-hidden />
+            <span className="sr-only">Created</span>
             {createdDate}
           </span>
+          {actions}
         </div>
 
         {/* Title */}
         {isEditingTitle ? (
           <div className="mb-3">
             <div className="flex items-center gap-2">
+              <label htmlFor="idea-title-edit" className="sr-only">
+                Title
+              </label>
               <input
+                id="idea-title-edit"
                 type="text"
                 value={title}
                 onChange={(e) => {
@@ -240,93 +255,93 @@ export function IdeaHeader({ idea }: IdeaHeaderProps) {
                 onBlur={saveTitle}
                 onKeyDown={(e) => e.key === "Enter" && saveTitle()}
                 autoFocus
-                className="flex-1 bg-transparent text-2xl font-bold tracking-tight text-white outline-none border-b-2 border-emerald-400 pb-1"
+                aria-invalid={!!titleError}
+                className="field flex-1 text-2xl font-bold tracking-tight"
               />
               <button
+                type="button"
                 onClick={saveTitle}
-                className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-emerald-950 transition-default"
+                className="btn btn-primary btn-icon min-h-11 min-w-11"
+                aria-label="Save title"
               >
-                <Check weight="bold" className="w-5 h-5" />
+                <Check weight="bold" className="w-5 h-5" aria-hidden />
               </button>
             </div>
             {titleError && (
-              <p className="text-xs text-rose-400 mt-1.5 font-medium">{titleError}</p>
+              <p className="text-xs text-danger mt-1.5 font-medium" role="alert">
+                {titleError}
+              </p>
             )}
           </div>
         ) : (
-          <h1
-            onClick={() => setIsEditingTitle(true)}
-            className="text-2xl font-bold tracking-tight text-white mb-3 cursor-pointer group flex items-center gap-2.5 hover:text-emerald-300 transition-default"
-          >
-            {title}
-            <PencilSimple
-              weight="bold"
-              className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-default"
-            />
+          <h1 className="mb-2 text-[clamp(1.5rem,1.1rem+1.4vw,2rem)]">
+            <button
+              type="button"
+              onClick={() => setIsEditingTitle(true)}
+              className="group text-left inline-flex items-center gap-2.5 rounded-lg hover:text-fg-body transition-default cursor-text"
+            >
+              {title}
+              <PencilSimple
+                weight="bold"
+                className="w-4 h-4 shrink-0 text-fg-muted opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-default"
+                aria-hidden
+              />
+              <span className="sr-only">(edit title)</span>
+            </button>
           </h1>
         )}
 
         {/* Description */}
+        <label htmlFor="idea-description" className="sr-only">
+          Description
+        </label>
         <textarea
+          id="idea-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={saveDescription}
           placeholder="Add a description..."
-          className="w-full bg-transparent text-sm text-slate-300 focus:text-white placeholder:text-slate-500 outline-none resize-none leading-relaxed tracking-tight transition-default"
+          className="w-full max-w-[70ch] bg-transparent text-[0.9375rem] text-fg-body placeholder:text-fg-muted rounded-lg -mx-2 px-2 py-1 resize-none hover:bg-surface-2 focus:bg-surface-2 transition-default"
           rows={2}
         />
-      </div>
+      </section>
 
-      {/* Launch confirmation modal */}
-      {mounted &&
-        showLaunchConfirm &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+      {/* Launch confirmation */}
+      <Modal
+        open={showLaunchConfirm}
+        onClose={() => setShowLaunchConfirm(false)}
+        title="Launch this idea?"
+        subtitle="Marks the idea as completed and shipped."
+        icon={
+          <span className="icon-badge tone-success">
+            <Rocket weight="fill" className="w-5 h-5" aria-hidden />
+          </span>
+        }
+      >
+        <p className="text-sm text-fg-body mb-6">
+          You&apos;re about to mark{" "}
+          <span className="font-semibold text-fg">&quot;{idea.title}&quot;</span> as
+          Launched. Confirm only once the idea has been completed or released.
+        </p>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <button
+            type="button"
             onClick={() => setShowLaunchConfirm(false)}
+            className="btn btn-secondary"
           >
-            <div
-              className="glass-card rounded-2xl p-8 max-w-md w-full border border-white/15 shadow-2xl relative animate-in"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center text-emerald-400">
-                  <Rocket weight="fill" className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold tracking-tight text-white">
-                    Launch this idea?
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium">
-                    This marks the idea as completed and shipped.
-                  </p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-                You&apos;re about to mark <span className="font-semibold text-white">&quot;{idea.title}&quot;</span> as Launched. This is an explicit action confirming the idea has been completed or released.
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={confirmLaunch}
-                  className="flex-1 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Rocket weight="bold" className="w-4 h-4" />
-                  Confirm Launch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowLaunchConfirm(false)}
-                  className="px-5 py-3 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-sm font-semibold text-slate-300 hover:text-white transition-default cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={confirmLaunch}
+            className="btn btn-primary"
+            autoFocus
+          >
+            <Rocket weight="bold" className="w-4 h-4" aria-hidden />
+            Confirm launch
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

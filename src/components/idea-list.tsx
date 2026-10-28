@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useMemo, useEffect, useTransition } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   MagnifyingGlass,
   X,
-  ArrowsDownUp,
-  Tag,
   Funnel,
   Lightning,
   Plus,
   ArrowClockwise,
+  CurrencyDollar,
+  Gauge,
 } from "@phosphor-icons/react";
-import { STATUS_LABELS, STATUS_CSS, LEVEL_CSS } from "@/lib/constants";
-import type { IdeaStatus, Level } from "@/lib/constants";
+import { LEVEL_CSS, LEVEL_LABELS } from "@/lib/constants";
+import type { Level } from "@/lib/constants";
+import { StatusBadge } from "@/components/status-badge";
+import { Segmented } from "@/components/segmented";
 
 export interface SerializedIdea {
   id: string;
@@ -50,7 +52,6 @@ export function IdeaList({
   initialCategory = "ALL",
   initialSort = "updated",
 }: IdeaListProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Read URL search params if present, else fallback to props
@@ -64,18 +65,16 @@ export function IdeaList({
   const [category, setCategory] = useState(paramCategory);
   const [sort, setSort] = useState(paramSort);
 
-  // Sync state if URL searchParams change (e.g. browser back/forward or stat card click)
-  useEffect(() => {
-    const q = searchParams.get("q") ?? "";
-    const s = searchParams.get("status") ?? "ACTIVE";
-    const c = searchParams.get("category") ?? "ALL";
-    const srt = searchParams.get("sort") ?? "updated";
-
-    setQuery(q);
-    setStatus(s);
-    setCategory(c);
-    setSort(srt);
-  }, [searchParams]);
+  // Sync state if URL searchParams change (e.g. browser back/forward or stat card click).
+  // Adjusting state during render avoids a cascading effect re-render.
+  const [prevSearchParams, setPrevSearchParams] = useState(searchParams);
+  if (searchParams !== prevSearchParams) {
+    setPrevSearchParams(searchParams);
+    setQuery(searchParams.get("q") ?? "");
+    setStatus(searchParams.get("status") ?? "ACTIVE");
+    setCategory(searchParams.get("category") ?? "ALL");
+    setSort(searchParams.get("sort") ?? "updated");
+  }
 
   // Sync state changes to browser URL without re-rendering server components
   const updateUrl = (
@@ -210,22 +209,17 @@ export function IdeaList({
   // Zero ideas total in DB
   if (ideas.length === 0) {
     return (
-      <div className="text-center py-20 px-6 glass-card rounded-3xl border border-white/12 relative overflow-hidden animate-in">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/35 shadow-[0_0_32px_rgba(16,185,129,0.25)] flex items-center justify-center mx-auto mb-4 text-emerald-400">
-          <Lightning weight="fill" className="w-8 h-8" />
+      <div className="tile text-center py-16 px-6 animate-in">
+        <div className="w-12 h-12 rounded-xl bg-surface-2 border border-line-strong flex items-center justify-center mx-auto mb-4">
+          <Lightning weight="fill" className="w-6 h-6 text-accent" aria-hidden />
         </div>
-        <h2 className="text-xl font-bold tracking-tight text-white mb-2">
-          No ideas yet
-        </h2>
-        <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
+        <h3 className="text-lg font-bold mb-1.5">No ideas yet</h3>
+        <p className="text-sm text-fg-muted mb-6 max-w-sm mx-auto">
           Start capturing your ideas. Every great product started as a thought.
         </p>
-        <Link
-          href="/ideas/new"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-accent text-sm font-bold tracking-tight transition-default active:scale-[0.98]"
-        >
-          <Plus weight="bold" className="w-4 h-4" />
-          Add Your First Idea
+        <Link href="/ideas/new" className="btn btn-primary">
+          <Plus weight="bold" className="w-4 h-4" aria-hidden />
+          Add your first idea
         </Link>
       </div>
     );
@@ -243,174 +237,128 @@ export function IdeaList({
 
   return (
     <div className="space-y-4">
-      {/* Search and Control Bar */}
-      <div className="glass-card rounded-2xl p-4 space-y-3.5 border border-white/10">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search Input */}
+      {/* Toolbar */}
+      <div className="tile p-3 sm:p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row gap-2.5">
           <div className="relative flex-1">
+            <label htmlFor="idea-search" className="sr-only">
+              Search ideas
+            </label>
             <MagnifyingGlass
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted pointer-events-none"
               weight="bold"
+              aria-hidden
             />
             <input
-              type="text"
+              id="idea-search"
+              type="search"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
-              placeholder="Search ideas by title, summary, or category..."
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-900/80 border border-white/10 text-white placeholder-slate-500 text-sm focus-ring transition-default"
+              placeholder="Search by title, summary or category"
+              className="field pl-9 pr-9"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => handleQueryChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded transition-default cursor-pointer"
-                title="Clear search"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 btn btn-ghost btn-icon"
+                aria-label="Clear search"
               >
-                <X weight="bold" className="w-3.5 h-3.5" />
+                <X weight="bold" className="w-3.5 h-3.5" aria-hidden />
               </button>
             )}
           </div>
 
-          {/* Category Dropdown */}
-          <div className="relative min-w-[170px]">
-            <Tag
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
-              weight="bold"
-            />
+          <div className="flex gap-2.5">
+            <label className="sr-only" htmlFor="idea-category">
+              Category
+            </label>
             <select
+              id="idea-category"
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-200 text-sm focus-ring appearance-none transition-default cursor-pointer"
+              className="field sm:w-44"
             >
-              <option value="ALL">All Categories</option>
+              <option value="ALL">All categories</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 text-xs">
-              ▼
-            </div>
-          </div>
 
-          {/* Sort Dropdown */}
-          <div className="relative min-w-[170px]">
-            <ArrowsDownUp
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
-              weight="bold"
-            />
+            <label className="sr-only" htmlFor="idea-sort">
+              Sort by
+            </label>
             <select
+              id="idea-sort"
               value={sort}
               onChange={(e) => handleSortChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-200 text-sm focus-ring appearance-none transition-default cursor-pointer"
+              className="field sm:w-44"
             >
-              <option value="updated">Recently Updated</option>
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="title">Alphabetical (A-Z)</option>
-              <option value="tasks">Most Tasks</option>
+              <option value="updated">Recently updated</option>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="title">Alphabetical (A–Z)</option>
+              <option value="tasks">Most tasks</option>
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 text-xs">
-              ▼
-            </div>
           </div>
         </div>
 
-        {/* Status Filter Tabs & Reset */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {statusOptions.map((opt) => {
-              const active = status === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handleStatusChange(opt.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-tight transition-default cursor-pointer ${
-                    active
-                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
-                  }`}
-                >
-                  <span>{opt.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                      active
-                        ? "bg-emerald-500/30 text-emerald-200"
-                        : "bg-white/5 text-slate-400"
-                    }`}
-                  >
-                    {opt.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Reset Filters button if active */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmented
+            label="Filter by status"
+            options={statusOptions}
+            value={status}
+            onChange={handleStatusChange}
+            className="max-w-full"
+          />
           {isFiltered && (
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-400 hover:text-amber-300 rounded hover:bg-amber-500/10 transition-default cursor-pointer ml-auto"
-              title="Reset all filters"
+              className="btn btn-ghost btn-sm ml-auto"
             >
-              <ArrowClockwise weight="bold" className="w-3.5 h-3.5" />
-              Reset filters
+              <ArrowClockwise weight="bold" className="w-3.5 h-3.5" aria-hidden />
+              Reset
             </button>
           )}
         </div>
       </div>
 
-      {/* Results Header */}
-      <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-slate-400 font-mono tracking-wide">
-          Showing <span className="text-white font-bold">{filteredIdeas.length}</span>{" "}
-          of <span className="text-slate-300">{ideas.length}</span> ideas
-          {status !== "ACTIVE" && (
-            <span className="text-emerald-400 ml-1.5 font-medium">
-              ({statusOptions.find((o) => o.id === status)?.label || status})
-            </span>
-          )}
-          {category !== "ALL" && (
-            <span className="text-teal-400 ml-1.5 font-medium">
-              [#{category}]
-            </span>
-          )}
-          {query && (
-            <span className="text-amber-400 ml-1.5">
-              matching &quot;{query}&quot;
-            </span>
-          )}
-        </p>
-      </div>
+      {/* Results summary */}
+      <p className="text-xs text-fg-muted px-1" aria-live="polite">
+        Showing <span className="text-fg font-semibold">{filteredIdeas.length}</span> of{" "}
+        {ideas.length} ideas
+        {status !== "ACTIVE" && (
+          <> · {statusOptions.find((o) => o.id === status)?.label || status}</>
+        )}
+        {category !== "ALL" && <> · #{category}</>}
+        {query && <> · matching &ldquo;{query}&rdquo;</>}
+      </p>
 
-      {/* Ideas List or Empty Search State */}
       {filteredIdeas.length === 0 ? (
-        <div className="text-center py-16 px-6 glass-card rounded-2xl border border-white/10 animate-in">
-          <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-white/10 flex items-center justify-center mx-auto mb-3 text-slate-400">
-            <Funnel weight="duotone" className="w-6 h-6" />
+        <div className="tile text-center py-12 px-6 animate-in">
+          <div className="w-11 h-11 rounded-xl bg-surface-2 border border-line flex items-center justify-center mx-auto mb-3 text-fg-muted">
+            <Funnel weight="bold" className="w-5 h-5" aria-hidden />
           </div>
-          <h3 className="text-base font-bold text-white mb-1">
-            No ideas match your filters
-          </h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4 leading-relaxed">
+          <h3 className="text-base font-bold mb-1">No ideas match your filters</h3>
+          <p className="text-sm text-fg-muted max-w-sm mx-auto mb-5">
             {query
-              ? `No ideas found matching "${query}". Try adjusting keywords, changing status, or clearing filters.`
-              : "No ideas found with current filters. Try selecting a different status or category."}
+              ? `Nothing matches "${query}". Try other keywords, or change the status or category.`
+              : "Try selecting a different status or category."}
           </p>
           <button
             type="button"
             onClick={handleResetFilters}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold tracking-tight border border-white/15 transition-default cursor-pointer"
+            className="btn btn-secondary btn-sm"
           >
-            <ArrowClockwise weight="bold" className="w-3.5 h-3.5" />
+            <ArrowClockwise weight="bold" className="w-3.5 h-3.5" aria-hidden />
             Clear all filters
           </button>
         </div>
       ) : (
-        <div className="space-y-2 stagger">
+        <ul className="space-y-2 stagger">
           {filteredIdeas.map((idea) => {
             const tasksDone = idea.tasks.filter((t) => t.status === "DONE").length;
             const totalIdTasks = idea.tasks.length;
@@ -418,84 +366,72 @@ export function IdeaList({
               totalIdTasks > 0 ? (tasksDone / totalIdTasks) * 100 : 0;
 
             const isArchived = idea.status === "ARCHIVED";
+            const feasibility = idea.analysis?.feasibility as Level | undefined;
 
             return (
-              <Link
-                key={idea.id}
-                href={`/ideas/${idea.id}`}
-                className={`flex items-center gap-4 glass-card glass-card-hover rounded-xl p-4 transition-default group ${
-                  isArchived ? "opacity-75 hover:opacity-100" : ""
-                }`}
-              >
-                {/* Status badge */}
-                <span
-                  className={`shrink-0 px-3 py-1 rounded-md text-xs font-semibold font-mono tracking-wide ${
-                    STATUS_CSS[idea.status as IdeaStatus] || "status-draft"
+              <li key={idea.id}>
+                <Link
+                  href={`/ideas/${idea.id}`}
+                  className={`tile tile-interactive flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 ${
+                    isArchived ? "opacity-70 hover:opacity-100" : ""
                   }`}
                 >
-                  {STATUS_LABELS[idea.status as IdeaStatus] || idea.status}
-                </span>
-
-                {/* Title + category + desc */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold tracking-tight text-slate-200 group-hover:text-white transition-default truncate">
-                      {idea.title}
-                    </h3>
-                    {idea.category && (
-                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-slate-400 bg-white/5 border border-white/5">
-                        #{idea.category}
-                      </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <StatusBadge status={idea.status} />
+                      <h3 className="text-[0.9375rem] font-semibold truncate min-w-0">
+                        {idea.title}
+                      </h3>
+                      {idea.category && (
+                        <span className="text-xs text-fg-muted font-mono">
+                          #{idea.category}
+                        </span>
+                      )}
+                    </div>
+                    {idea.description && (
+                      <p className="text-sm text-fg-muted truncate mt-1">
+                        {idea.description}
+                      </p>
                     )}
                   </div>
-                  {idea.description && (
-                    <p className="text-xs text-slate-400 truncate mt-0.5">
-                      {idea.description}
-                    </p>
-                  )}
-                </div>
 
-                {/* Indicators */}
-                <div className="flex items-center gap-3 shrink-0">
-                  {idea.analysis && (
-                    <span
-                      className={`px-2.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-semibold ${
-                        LEVEL_CSS[idea.analysis.feasibility as Level] || ""
-                      }`}
-                    >
-                      {idea.analysis.feasibility}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {feasibility && feasibility in LEVEL_CSS && (
+                      <span
+                        className={`chip ${LEVEL_CSS[feasibility]}`}
+                        title="Feasibility"
+                      >
+                        <Gauge weight="bold" className="w-3 h-3" aria-hidden />
+                        <span className="sr-only">Feasibility:</span>
+                        {LEVEL_LABELS[feasibility]}
+                      </span>
+                    )}
 
-                  {idea.analysis?.canMonetize && (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
-                      $
-                    </span>
-                  )}
+                    {idea.analysis?.canMonetize && (
+                      <span className="chip tone-success" title="Monetizable">
+                        <CurrencyDollar weight="bold" className="w-3 h-3" aria-hidden />
+                        <span className="sr-only">Monetizable</span>
+                      </span>
+                    )}
 
-                  {/* Task progress */}
-                  {totalIdTasks > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-800/80 rounded-full overflow-hidden border border-white/5">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    <span className="flex items-center gap-2 sm:w-28">
+                      <span className="progress-track flex-1 sm:w-16 block" aria-hidden>
+                        <span
+                          className="progress-fill block"
                           style={{ width: `${progress}%` }}
                         />
-                      </div>
-                      <span className="text-[11px] font-mono tabular-nums text-slate-400 font-semibold">
-                        {tasksDone}/{totalIdTasks}
                       </span>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] font-mono text-slate-400">
-                      0 tasks
+                      <span className="text-xs font-mono tabular-nums text-fg-muted">
+                        {tasksDone}/{totalIdTasks}
+                        <span className="sr-only"> tasks done</span>
+                      </span>
                     </span>
-                  )}
-                </div>
-              </Link>
+                  </div>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

@@ -47,29 +47,37 @@ export function QuickAddForm() {
     <form
       ref={formRef}
       action={handleSubmit}
-      className="flex items-center gap-3 bg-gradient-to-r from-[#141926]/90 to-[#10141f]/90 border border-white/12 rounded-2xl p-3 focus-within:border-emerald-500/50 focus-within:shadow-[0_0_24px_-2px_rgba(16,185,129,0.28)] transition-default backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_6px_20px_rgba(0,0,0,0.3)]"
+      className="flex items-center gap-2"
     >
-      <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0 ml-0.5">
-        <Plus weight="bold" className="w-4 h-4 text-emerald-400" />
+      <label htmlFor="quick-capture" className="sr-only">
+        Idea title
+      </label>
+      <div className="relative flex-1">
+        <Plus
+          weight="bold"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted pointer-events-none"
+          aria-hidden
+        />
+        <input
+          id="quick-capture"
+          ref={inputRef}
+          type="text"
+          name="title"
+          placeholder="What's the idea? Press Enter to save"
+          required
+          disabled={submitting}
+          maxLength={200}
+          className="field pl-9 disabled:opacity-60"
+        />
       </div>
-      <input
-        ref={inputRef}
-        type="text"
-        name="title"
-        placeholder="Quick capture an idea (press Enter to create)..."
-        required
-        disabled={submitting}
-        maxLength={200}
-        className="flex-1 bg-transparent text-sm font-medium text-white placeholder:text-slate-500 tracking-tight outline-none disabled:opacity-60"
-      />
       <button
         type="submit"
         disabled={submitting}
-        className="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 border border-emerald-500/30 hover:border-emerald-400 text-xs font-bold text-emerald-300 hover:text-emerald-950 transition-default active:scale-[0.97] shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0"
+        className="btn btn-primary shrink-0"
       >
         {submitting ? (
           <>
-            <SpinnerGap weight="bold" className="w-3.5 h-3.5 animate-spin" />
+            <SpinnerGap weight="bold" className="w-4 h-4 animate-spin" aria-hidden />
             <span>Capturing...</span>
           </>
         ) : (

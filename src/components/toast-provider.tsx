@@ -81,50 +81,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, success, error, info }}>
       {children}
-      {/* Toast floating container */}
+      {/* Toast container: full-width bottom on phones, bottom-right otherwise */}
       <div
         aria-live="polite"
-        className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
+        className="fixed bottom-4 inset-x-4 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 flex flex-col gap-2 sm:w-96 pointer-events-none"
       >
         {toasts.map((t) => {
           const isSuccess = t.type === "success";
           const isError = t.type === "error";
+          const tone = isSuccess ? "tone-success" : isError ? "tone-danger" : "tone-info";
 
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto p-4 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-start gap-3 transition-all duration-300 animate-in ${
-                isSuccess
-                  ? "bg-[#111923]/95 border-emerald-500/35 text-white shadow-[0_8px_32px_rgba(16,185,129,0.22)]"
-                  : isError
-                    ? "bg-[#1f141a]/95 border-rose-500/35 text-white shadow-[0_8px_32px_rgba(244,63,94,0.22)]"
-                    : "bg-[#141826]/95 border-indigo-500/35 text-white shadow-[0_8px_32px_rgba(99,102,241,0.22)]"
-              }`}
+              role={isError ? "alert" : "status"}
+              className="pointer-events-auto tile shadow-(--shadow-lg) p-3.5 flex items-start gap-3 animate-in"
             >
-              {/* Icon */}
-              <div
-                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border ${
-                  isSuccess
-                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-                    : isError
-                      ? "bg-rose-500/20 border-rose-500/40 text-rose-400"
-                      : "bg-indigo-500/20 border-indigo-500/40 text-indigo-400"
-                }`}
-              >
-                {isSuccess && <CheckCircle weight="fill" className="w-4 h-4" />}
-                {isError && <Warning weight="fill" className="w-4 h-4" />}
+              <span className={`icon-badge ${tone} w-8 h-8 rounded-lg`}>
+                {isSuccess && <CheckCircle weight="fill" className="w-4 h-4" aria-hidden />}
+                {isError && <Warning weight="fill" className="w-4 h-4" aria-hidden />}
                 {!isSuccess && !isError && (
-                  <Info weight="fill" className="w-4 h-4" />
+                  <Info weight="fill" className="w-4 h-4" aria-hidden />
                 )}
-              </div>
+              </span>
 
-              {/* Body */}
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="text-xs font-bold tracking-tight text-white">
-                  {t.title}
-                </p>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className="text-sm font-semibold text-fg leading-snug">{t.title}</p>
                 {t.description && (
-                  <p className="text-xs text-slate-300 mt-0.5 leading-relaxed break-words">
+                  <p className="text-[0.8125rem] text-fg-muted mt-0.5 leading-snug break-words">
                     {t.description}
                   </p>
                 )}
@@ -134,7 +118,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                       <Link
                         href={t.action.href}
                         onClick={() => removeToast(t.id)}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-default underline underline-offset-4 cursor-pointer"
+                        className="text-[0.8125rem] font-semibold text-accent hover:text-accent-hover underline underline-offset-4"
                       >
                         {t.action.label}
                       </Link>
@@ -145,7 +129,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                           t.action?.onClick?.();
                           removeToast(t.id);
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-default cursor-pointer"
+                        className="text-[0.8125rem] font-semibold text-accent hover:text-accent-hover cursor-pointer"
                       >
                         {t.action.label}
                       </button>
@@ -154,14 +138,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 )}
               </div>
 
-              {/* Dismiss */}
               <button
                 type="button"
                 onClick={() => removeToast(t.id)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition-default cursor-pointer shrink-0 -mr-1"
-                title="Dismiss"
+                className="btn btn-ghost btn-icon shrink-0 -mr-1 -mt-0.5"
+                aria-label="Dismiss notification"
               >
-                <X weight="bold" className="w-3.5 h-3.5" />
+                <X weight="bold" className="w-3.5 h-3.5" aria-hidden />
               </button>
             </div>
           );
